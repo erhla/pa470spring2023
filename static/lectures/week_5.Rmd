@@ -1,0 +1,242 @@
+---
+title: "Week 5"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    theme: sandstone
+    number_sections: true
+---
+
+```{r initial_setup, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(lubridate)
+library(kableExtra)
+library(scales)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      eval= TRUE)
+
+theme_set(theme_bw())
+```
+
+# Tidymodels
+
+By now, we have looked at broom (tidy, glance, augment), rsample (splitting data), parsnip (specifying models), and yardstick (evaluating models). 
+
+## Workflows
+
+We are now going to look at starting to put together all the pieces into a coherent workflow, similar to how you might chain mutate/group by/summarize/left join/etc in tidyverse as one step. 
+
+We are continuing to build our modeling pipeline.
+
+Figure 1.3: ![](https://www.tmwr.org/premade/modeling-process.svg)
+
+Now let's introduce the model workflow. We won't really see the benefit of using this until we start using a lot of different models.
+
+```{r}
+lm_model <- 
+  linear_reg() %>% 
+  set_engine("lm")
+
+lm_wflow <- 
+  workflow() %>% 
+  add_model(lm_model)
+
+data(ames)
+
+ames <- mutate(ames, Sale_Price = log10(Sale_Price))
+
+set.seed(123)
+ames_split <- initial_split(ames, prop = 0.80, strata = Sale_Price)
+ames_train <- training(ames_split)
+ames_test  <-  testing(ames_split)
+
+lm_model <- linear_reg() %>% set_engine("lm")
+
+lm_wflow <- 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_formula(Sale_Price ~ Longitude + Latitude)
+
+lm_fit <- fit(lm_wflow, ames_train)
+
+```
+
+## Recipies
+
+A recipe is also an object that defines a series of steps for data processing. Unlike the formula method inside a modeling function, the recipe defines the steps without immediately executing them; it is only a specification of what should be done. ~ Sec 8.1
+
+Here's the example from the textbook:
+
+```{r}
+simple_ames <- 
+  recipe(Sale_Price ~ Neighborhood + Gr_Liv_Area + Year_Built + Bldg_Type,
+         data = ames_train) %>% #data is used here for column types only
+  step_log(Gr_Liv_Area, base = 10) %>% 
+  step_dummy(all_nominal_predictors())
+simple_ames
+
+
+```
+
+Another key point from 8.3, all preprocessing/feature engineering steps only use the training data. Otherwise, your model might utilize information leakage and lead to overfitting.
+
+There's a ton of different recipe steps
+
+
+Let's go back and look at the divvy data and see how we could use a recipe for data processing. Recall the example from class...
+
+Key steps:
+
+1. Process recipe using training data
+2. Apply recipe using training data
+3. Apply recipe to testing
+
+```{r}
+divvy_data <- read_csv('https://github.com/erhla/pa470spring2022/raw/main/static/lectures/week_3_data.csv')
+
+grouped <- rsample::initial_split(divvy_data)
+train <- training(grouped)
+test  <- testing(grouped)
+
+
+lm_model <-
+  parsnip::linear_reg() %>%
+  set_engine("lm") %>%
+  set_mode('regression')
+
+divvy_rec <- recipe(rides ~ ., data=train)
+
+divvy_rec
+
+divvy_rec <- recipe(rides ~ solar_rad + started_hour +
+           temp + wind + interval_rain + avg_speed, data=train) %>%
+  step_mutate(hour = factor(hour(started_hour))) %>%
+  step_date(started_hour, features=c("dow", "month")) %>%
+  step_holiday(started_hour, holidays = timeDate::listHolidays("US"),
+               keep_original_cols = FALSE) %>%
+  step_dummy(all_nominal_predictors())
+
+
+divvy_workflow <-
+  workflow() %>%
+  add_model(lm_model) %>%
+  add_recipe(divvy_rec)
+
+divvy_workflow
+
+divvy_fit <- divvy_workflow %>%
+  fit(data=train)
+
+divvy_fit %>% tidy() %>% view()
+
+divvy_preds <- 
+  augment(divvy_fit, test)
+```
+
+Recall that our simple model had a MAPE of 136 and a RMSE of 352.
+
+```{}
+solar_rad + factor(hour(started_hour)) + 
+           factor(wday(started_hour)) +
+           factor(month(started_hour)) +
+           temp + wind + interval_rain + avg_speed
+```
+
+This is essentially the same model
+
+```{r}
+divvy_fit %>% extract_fit_parsnip() %>% tidy()
+```
+
+
+```{r}
+yardstick::mape(divvy_preds, 
+     truth = rides,
+     estimate = .pred)
+yardstick::rmse(divvy_preds, 
+     truth = rides,
+     estimate = .pred)
+
+ggplot(divvy_preds, aes(x=.pred)) +
+  geom_density()
+```
+
+Let's try to improve the model now
+
+```{r}
+divvy_rec <- recipe(rides ~ ., data=train) %>%
+  step_mutate(hour = factor(hour(started_hour)),
+              bad_weather = if_else(solar_rad <= 5 & temp <= 5, 1, 0),
+              nice_weather = if_else(solar_rad >= 25 & temp >= 15, 1, 0)) %>%
+  step_date(started_hour, features=c("dow", "month")) %>%
+  step_holiday(started_hour, holidays = timeDate::listHolidays("US"),
+               keep_original_cols = FALSE) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_corr(all_predictors())
+
+divvy_workflow <-
+  workflow() %>%
+  add_model(lm_model) %>%
+  add_recipe(divvy_rec)
+
+divvy_workflow
+
+divvy_fit <- divvy_workflow %>%
+  fit(data=train)
+
+divvy_preds <- 
+  augment(divvy_fit, test, new_data =  test)
+
+
+yardstick::mape(divvy_preds, 
+     truth = rides,
+     estimate = .pred)
+yardstick::rmse(divvy_preds, 
+     truth = rides,
+     estimate = .pred)
+
+ggplot(divvy_preds, aes(x=.pred)) +
+  geom_density()
+```
+
+Using decision trees
+
+```{r}
+tree_model <-
+  parsnip::decision_tree(tree_depth=5) %>%
+  set_engine("rpart") %>%
+  set_mode('regression')
+
+divvy_workflow <-
+  workflow() %>%
+  add_model(tree_model) %>%
+  add_recipe(divvy_rec)
+
+divvy_workflow
+
+divvy_fit <- divvy_workflow %>%
+  fit(data=train)
+
+divvy_preds <- 
+  augment(divvy_fit, test)
+
+
+yardstick::mape(divvy_preds, 
+     truth = rides,
+     estimate = .pred)
+yardstick::rmse(divvy_preds, 
+     truth = rides,
+     estimate = .pred)
+
+ggplot(divvy_preds, aes(x=.pred)) +
+  geom_density()
+
+tree_fit <- divvy_fit %>% 
+  extract_fit_engine()
+rpart.plot::rpart.plot(tree_fit)
+```
+

@@ -1,0 +1,66 @@
+---
+title: "Week 2"
+subtitle: "PA 470 Spring 2022"
+author: "Eric Langowski"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Welcome and Schedule
+
+### 6:30pm Review Coding Warmup 1
+
+### 6:45pm Some Background
+
+- RMarkdown Basics
+- GitHub/GitHub pages
+- Census Data
+
+### 7:15pm Spatial Data Overview
+
+### 7:45pm Break + Debugging (15 minutes)
+
+### 8:00pm Coding
+
+## Spatial Data {.build}
+
+Real world problems **require** accurate projections of geographic relationships.
+
+- Find the ten neighborhoods in a city with the longest fire department response times.
+- Use real-time satellite imagery to detect early warnings of forest fires.
+- Detect changes in high-resolution satellite imagery that suggest building additions that do not match official building permits.
+- Estimate the impact of bar openings on nearby crime, business patterns, and property values.
+- Determine whether low-income households face a higher risk of sea-level rise.
+
+## Spatial Data
+
+- Objects: sets of points which create shapes like roads/buildings
+- Fields: spatially continuous processes like temperature
+
+<div class='columns-2'>
+![](https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fsdata.2018.177/MediaObjects/41597_2018_Article_BFsdata2018177_Fig1_HTML.jpg){width=100%}
+![](https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Thompson_Chicago_plat_1830.jpg/549px-Thompson_Chicago_plat_1830.jpg){width=70%}
+</div>
+
+## Vectors
+
+- Point, each group has one point
+- Lines, each group has multiple, ordered points
+- Polygons, each group has multiple, ordered points, with first/last point the same
+
+CSV, Shapefile, GeoJSON
+
+### Coordinate Reference System (CRS)
+
+Key to project points onto Earth's surface
+
+Very common are 4326 or 4269 (census)
+
+## Census Data Hierarchy
+
+[Geographies](https://www2.census.gov/geo/pdfs/reference/geodiagram.pdf){width=70%}
+
+## Coding

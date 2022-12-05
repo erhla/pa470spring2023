@@ -1,0 +1,297 @@
+---
+title: "Detroit"
+date: 2022-02-10T00:00:00-00:00
+categories: ["R"]
+tags: ["detroit"]
+publishdate: 2022-02-02T00:00:00-00:00
+---
+
+
+
+<div id="assignment" class="section level2">
+<h2>Assignment</h2>
+<p>Instead of traditional problem sets, this course has a single four part assignment where you will build upon your previous work each week with new material from the course. You will explore property assessment in Detroit, Michigan and create an assessment model. After the completion of the assignment, you will wrap your model into a report which analyzes the effectiveness of your model based on the ethical and other frameworks from class and make a brief presentation to the class.</p>
+</div>
+<div id="submissions" class="section level2">
+<h2>Submissions</h2>
+<p>You will do all of your work for this assignment by creating a repository in <a href="https://classroom.github.com/a/m8Yk_ZMs">GitHub Classroom</a>. Please submit your work via descriptively worded commits such as ‘part 1 final submission.’ I will provide feedback via pull requests so please do not merge/close the pull request. Please add your GitHub username to <a href="https://docs.google.com/spreadsheets/d/1XwYqZwJW8L7tJHesI4juo8xlFeXWVi0Kw7B6L450om8/edit?usp=sharing">this sheet</a> to facilitate grading.</p>
+</div>
+<div id="part-1-due-213-1159pn" class="section level2">
+<h2>Part 1 (Due 2/13, 11:59pn)</h2>
+<p>You have been tasked with undertaking a multi-part analysis of homes in Detroit, Michigan. You are provided with a database to facilitate this analysis. This database was constructed from the <a href="https://data.detroitmi.gov">Detroit Open Data portal</a> and numerous FOIA requests. More information is included in the databases <em>readme</em>. Note that the database must be downloaded via the link provided in the readme.</p>
+<p>Using <code>part_1.Rmd</code> in the reports folder, edit that file to accomplishes the following tasks:</p>
+<ul>
+<li>Section A: Conduct an exploratory data analysis of homes in Detroit. Offer an overview of relevant trends in the data and data quality issues. Contextualize your analysis with <a href="https://scholarship.law.uci.edu/ucilr/vol9/iss4/3/">key</a> <a href="https://harris.uchicago.edu/files/evalrespropertytaxasdetroit20162018.pdf">literature</a> on properties in Detroit.</li>
+<li>Section B: Use <a href="https://erhla.github.io/cmfproperty/index.html"><code>cmfproperty</code></a> to conduct a sales ratio study across the relevant time period. Note that <code>cmfproperty</code> is designed to produce Rmarkdown reports but <a href="https://erhla.github.io/cmfproperty/articles/cmfproperty.html">use the documentation</a> and insert relevant graphs/figures into your report. Look to make this reproducible since you’ll need these methods to analyze your assessment model later on. Detroit has many sales which are not arm’s length (sold at fair market value) so some sales should be excluded, but which ones?</li>
+<li>Section C: Explore trends and relationships with property sales using simple regressions</li>
+<li>Section D: Explore trends and relationships with foreclosures using simple regressions</li>
+</ul>
+</div>
+<div id="part-1-example" class="section level2">
+<h2><a href="/solutions/part_1.Rmd">Part 1 Example</a></h2>
+</div>
+<div id="part-1-example-html" class="section level2">
+<h2><a href="/solutions/part_1.html">Part 1 Example HTML</a></h2>
+</div>
+<div id="part-2-due-227-1159pm" class="section level2">
+<h2>Part 2 (Due 2/27, 11:59pm)</h2>
+<p>Objective: Now that you have a decent understanding of the landscape in Detroit, create a new file (part_2.Rmd) which builds upon part_1 in the html report Rmarkdown style.</p>
+<p>Submission: submit to Blackboard both your code and the knitted Rmarkdown output.</p>
+<p>Part A</p>
+<p>Create an ‘introduction’ to your report. Generally, only include stylized output (do not use base R print). This could mean using stargazer to show regressions, DT::datatable to show data.frames, and adding titles/labels to plots. Your introduction should include:</p>
+<ol style="list-style-type: decimal">
+<li>Brief background (2-3 sentences) on issues in the Detroit assessment space</li>
+<li>3 to 4 graphs with descriptive captions which include information on sale price, assessment accuracy, foreclosures, and outliers. Generally focus on single family homes and arm’s length transactions. While it is notable that so many properties are sold for small amounts, we typically only want to look at properties which are class 401, taxable (e.g. assessed over 2000 or so), and sell above $4,000.</li>
+</ol>
+<p>Part B</p>
+<p>We have two separate (but very related) problems we want to model. First, we want to find a way to identify if a home is likely to be overassessed in a given year. We will analyze homes and assessments from 2016. We will use tidymodels to create a workflow.</p>
+<ol style="list-style-type: decimal">
+<li>Create your workflow</li>
+<li>Add to your workflow a classification model</li>
+<li>Add to your workflow a recipe of preprocessing steps. Use 2016 sales and assessments with the parcels property characteristics (note that we only know if a home was overassessed if it sold). Create a classification metric of overassessment based on properties which sold and use this as your <strong>dependent</strong> variable. Explain how you decided to construct this metric and how many classes it has.</li>
+<li>Create testing/training data and evaluate your model using the classification metrics from tables 8.3 and 8.4 from the textbook and the classification probability metric ROC curves.</li>
+</ol>
+</div>
+<div id="part-2-example" class="section level2">
+<h2><a href="/solutions/part_2.Rmd">Part 2 Example</a></h2>
+</div>
+<div id="part-2-example-html" class="section level2">
+<h2><a href="/solutions/part_2.html">Part 2 Example HTML</a></h2>
+<p>Part C</p>
+<p>Second, building off of the workflow from part B. Create a second model to create your own 2019 assessments. (Note that I am choosing this year to avoid impacts from the pandemic and data quality issues. You may, if you’d like, create 2022 assessments. Limited sales data is released <a href="https://detroitmi.gov/departments/office-chief-financial-officer/ocfo-divisions/office-assessor/sales-study">here</a>.)</p>
+<ol style="list-style-type: decimal">
+<li>Create your workflow</li>
+<li>Add to your workflow a model</li>
+<li>Add to your workflow a recipe of preprocessing steps. Use sales and assessments from before 2019 with the parcels property characteristics.</li>
+<li>Create testing/training data and evaluate your model using numeric metrics RMSE and MAPE.</li>
+</ol>
+</div>
+<div id="part-3-due-320-1159pm" class="section level2">
+<h2>Part 3 (Due 3/20, 11:59pm)</h2>
+<p>Create <code>part_3.Rmd</code> in the reports folder, copying the yaml/framework from <code>part_1.Rmd</code>.</p>
+<p><strong>NOTE: I have updated <a href="https://uic365-my.sharepoint.com/:u:/g/personal/erhlango_uic_edu/EaeVtM_p_eVEjzAHixZ5YrQBAUpI2nPtvgXcpYoJr1ZT3Q">the database</a> with a new table, <code>attributes</code>, which includes better property characteristic information.</strong></p>
+<p>Rough codebook:</p>
+<pre><code>exterior, (1 siding, 2 brick/other, 3 brick, 4 other)
+bath, (1 1.0, 2 1.5, 3 2 to 3, 4 3+)
+height, (1 1 to 1.5, 2 1.5 to 2.5, 3 3+)</code></pre>
+<div id="part-a-20" class="section level3">
+<h3>Part A (20%)</h3>
+<p>Begin to finalize your report by only including report/website quality output. By this, only include stylized output (do not use base R print). Avoid any package loading or other incidential inclusion of output in your report. This could mean using stargazer to show regressions, DT::datatable to show data.frames, and adding titles/labels to plots. Give all plots and tables appropriate captions. Write two to three sentence introductions for the different sections of your report. Your report should introduce property assessment in Detroit, Michigan (as defined in part 2A), your two prediction models (from 2B and 2C), and a conclusion.</p>
+</div>
+<div id="part-b-20" class="section level3">
+<h3>Part B (20%)</h3>
+<p>Feature engineering. You have now created two base models and evaluation metrics from last week. Investigate creating at least two new predictors and analyze if they improve your model. Some possibilities:</p>
+<ul>
+<li>Neighborhood foreclosures/blight tickets</li>
+<li>Previous rates of assessment (part B only)</li>
+<li>Census variables (such as income, race)</li>
+<li>Neighborhood demolition of homes (look at how many class 401 properties w/ nonzero assessment by year)</li>
+<li>Sale price per square foot for neighborhood</li>
+</ul>
+</div>
+<div id="part-c-20" class="section level3">
+<h3>Part C (20%)</h3>
+<p>Prediction. Create out of sample predictions for both models. By this, predict overassessment and assessment/valuation for homes which did not sell for each model (2016 for B, 2019 for C). Note if you are having trouble with this step that you cannot use any information specific to the sale of a property for out-of-sample prediction.</p>
+</div>
+<div id="part-d-40" class="section level3">
+<h3>Part D (40%)</h3>
+<p>Model Explanation. Each model has different tools for explainability and we will discuss this more in class. Undertake this initial work knowing that we will gain more techniques for this later on.</p>
+<p>For Model B/overassessment, aggregate your predictions by census tract. Join in a census variable. Create a simple correlation plot and create a representation of the geographic variance in your predictions (this could be a leaflet map by census tract for example).</p>
+<p>For Model C/assessment, undertake an initial analysis of which factors your model identified as most important for valuation.</p>
+</div>
+</div>
+<div id="part-3-example" class="section level2">
+<h2><a href="/solutions/part_3.Rmd">Part 3 Example</a></h2>
+</div>
+<div id="part-3-example-html" class="section level2">
+<h2><a href="/solutions/part_3.html">Part 3 Example HTML</a></h2>
+</div>
+<div id="final-submission-due-331" class="section level2">
+<h2>Final Submission (Due 3/31)</h2>
+<p>Create <code>final_report.Rmd</code> in the reports folder, copying the yaml/framework from <code>part_1.Rmd</code>.</p>
+<p>Bring together your previous submissions into one cohesive report. This report should offer a brief overview of the problem (assessment), general trends on properties, your model, why your model is better than other models, and any technical or ethical critiques.</p>
+<p>Your final submission will build upon your part 3 submission by ‘switching out’ the model you use and adding a conclusion.</p>
+<div id="part-a-new-assessment-models" class="section level3">
+<h3>Part A, New Assessment Models</h3>
+<p>Mirror Section 15.3 from the textbook for your assessment model only!</p>
+<ul>
+<li>Create a <code>workflow_set()</code> of three different model types. You may choose any which are comparable with <code>tidymodels</code>. Suggested models and tuning parameters below. I <strong>encourage</strong> you to consider using one model not from this list, but that is optional.</li>
+</ul>
+<pre><code>linear_reg_spec &lt;- 
+   linear_reg(penalty = tune(), mixture = tune()) %&gt;% 
+   set_engine(&quot;glmnet&quot;)
+   
+rf_spec &lt;- 
+   rand_forest(mtry = tune(), min_n = tune(), trees = 250) %&gt;% 
+   set_engine(&quot;ranger&quot;) %&gt;% 
+   set_mode(&quot;regression&quot;)
+   
+xgb_spec &lt;- 
+   boost_tree(tree_depth = tune(), learn_rate = tune(), loss_reduction = tune(), 
+              min_n = tune(), sample_size = tune(), trees = tune()) %&gt;% 
+   set_engine(&quot;xgboost&quot;) %&gt;% 
+   set_mode(&quot;regression&quot;)
+   
+my_set &lt;- workflow_set(
+  preproc = list(name_for_your_recipie = your_recipie),
+  models = list(linear_reg = linear_reg_spec, random_forest = rf_spec, boosted = xgb_spec)
+)</code></pre>
+<p>The textbook applies slightly different preprocessing steps to these models, but they should work reasonably well with your current recipe. If you have any compatability issues, I recommend starting with a simple recipe and adding things back one at a time.</p>
+<ul>
+<li>Now, apply <code>workflow_map()</code> to your <code>workflow_set()</code>. You should resample your testing data and create a small grid. Please use at least 3 resamples and a grid of at least 5. This may take a long time (10+ minutes). I recommend starting very small and gradually increasing your resamples/grid. Note that I’ve included verbose = TRUE here to help you debug, please do not include this output in your final project.</li>
+</ul>
+<pre><code>grid_ctrl &lt;-
+   control_grid(
+      save_pred = FALSE,
+      save_workflow = FALSE
+   )
+
+grid_results &lt;-
+   my_set %&gt;%
+   workflow_map(
+      seed = 1503,
+      resamples = your_resamples,
+      grid = 5,
+      control = grid_ctrl,
+      verbose = TRUE
+   )
+   </code></pre>
+<ul>
+<li>Now, use <code>rank_results</code> on your selected performance metric and <code>autoplot</code> to replicate figure 15.1. Does one model perform significantly better than others? Select what you feel is the best by finalizing your model (see Section 15.5).</li>
+</ul>
+<pre><code>best_results &lt;- 
+   grid_results %&gt;% 
+   extract_workflow_set_result(&quot;best model type name&quot;) %&gt;% 
+   select_best(metric = &quot;your metric&quot;)
+best_results
+
+best_results_fit &lt;- 
+   grid_results %&gt;% 
+   extract_workflow(&quot;best model type name&quot;) %&gt;% 
+   finalize_workflow(best_results) %&gt;% 
+   last_fit(split = your_rsample_data) #this is the output of rsample::initial_time_split() or rsample::initial_split()</code></pre>
+<ul>
+<li>Consider making a simple visualization of predicted / observed values from your best model similar to Figure 15.5</li>
+</ul>
+<pre><code>best_results_fit %&gt;% 
+   collect_predictions() %&gt;% 
+   ggplot(aes(x = target_variable, y = .pred)) + 
+   geom_abline(color = &quot;gray50&quot;, lty = 2) + 
+   geom_point(alpha = 0.5) + 
+   coord_obs_pred() + 
+   labs(x = &quot;observed&quot;, y = &quot;predicted&quot;)</code></pre>
+</div>
+<div id="part-b-hyperparameter-exploration-for-classification" class="section level3">
+<h3>Part B, Hyperparameter Exploration for Classification</h3>
+<p>Mirroring Section 14.2.3, take your current workflow and use <code>tune_bayes()</code> to create a small tuning grid for your classification model. You will need to:</p>
+<ul>
+<li>Identify appropriate hyperparameters to be tuned for your chosen model type and set them equal to <code>tune()</code> in your workflow (note: do not include <code>mtry</code> in your tuning grid)</li>
+<li>Manually create a start_grid and evaluate your workflow to create initial values for <code>tune_bayes()</code></li>
+</ul>
+<pre><code>initial_vals &lt;- your_workflow %&gt;%
+  tune_grid(
+    resampled_data,
+    grid = 4,
+    metrics = your_metric_set,
+  )</code></pre>
+<ul>
+<li>Run a bayes search</li>
+</ul>
+<pre><code>ctrl &lt;- control_bayes(verbose = TRUE)
+
+your_search &lt;- 
+  your_workflow %&gt;%
+  tune_bayes(
+    resamples = ...,
+    metrics = ...,
+    initial = initial_vals, #note you may simply pass a number here e.g. 6 for a random search
+    iter = 25,
+    control = ctrl
+  )</code></pre>
+<ul>
+<li>Call <code>show_best</code> and finalize your model</li>
+</ul>
+</div>
+<div id="part-c-conclusion-presentation" class="section level3">
+<h3>Part C, Conclusion &amp; Presentation</h3>
+<p>Write a four paragraph conclusion to your file. Include information on your model type, its performance on your chosen objective function, any ethical or implementation issues (e.g. should Detroit use your model?).</p>
+<p>In class on the 31st, everyone will give a brief presentation on their work. You may present your knitted Rmd file or pull some of your graphs into a slide deck. Your presentation should be at most five minutes. Broadly look to answer if your model should be implemented by discussing the information in your conclusion and assignment.</p>
+</div>
+</div>
+<div id="grading-overview" class="section level2">
+<h2>Grading Overview</h2>
+<p>For each assignment, you will be graded on substantial completion of the assignment (demonstrated by an attempt of all parts). When submitting parts 2, 3, and 4, you will be additionally graded on your incorporation of feedback, new concepts from the course, or the correction of any flagged issues.</p>
+<p>The assignment will culminate in a final submission of code/report and presentation. Code will be graded based on reproducibility, conceptual understanding, and accuracy. The report will be an Rmarkdown file which knits together graphs, tables, and ethical frameworks. It should be concise (include only relevant information from Parts 1-4). This report will be used to give a five minute presentation to the class on your model and ethical/technical issues with Detroit property assessment.</p>
+</div>
+<div id="part-4-example" class="section level2">
+<h2><a href="/solutions/part_4.Rmd">Part 4 Example</a></h2>
+</div>
+<div id="part-4-example-html" class="section level2">
+<h2><a href="/solutions/part_4.html">Part 4 Example HTML</a></h2>
+<table>
+<colgroup>
+<col width="9%" />
+<col width="9%" />
+<col width="41%" />
+<col width="38%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Date</th>
+<th>Points</th>
+<th>Category</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>10-Feb</td>
+<td>5</td>
+<td>Substantial Completion (attempted all parts)</td>
+<td>Part 1 Due</td>
+</tr>
+<tr class="even">
+<td>24-Feb</td>
+<td>5</td>
+<td>Substantial Completion (attempted all parts)</td>
+<td>Part 2 Due</td>
+</tr>
+<tr class="odd">
+<td>24-Feb</td>
+<td>5</td>
+<td>Incorporation of Feedback/New Concepts</td>
+<td>From Part 1</td>
+</tr>
+<tr class="even">
+<td>17-Mar</td>
+<td>10</td>
+<td>Substantial Completion (attempted all parts)</td>
+<td>Part 3 Due</td>
+</tr>
+<tr class="odd">
+<td>17-Mar</td>
+<td>10</td>
+<td>Incorporation of Feedback/New Concepts</td>
+<td>From Part 2</td>
+</tr>
+<tr class="even">
+<td>31-Mar</td>
+<td>30</td>
+<td>Final Code</td>
+<td>Reproducible (10), Concepts (10), Accurate (10)</td>
+</tr>
+<tr class="odd">
+<td>31-Mar</td>
+<td>20</td>
+<td>Final Report</td>
+<td>Via Rmarkdown HTML, contextualized analysis and ethics</td>
+</tr>
+<tr class="even">
+<td>31-Mar</td>
+<td>15</td>
+<td>Final Presentation</td>
+<td>5 minute presentation on model and insights</td>
+</tr>
+</tbody>
+</table>
+</div>

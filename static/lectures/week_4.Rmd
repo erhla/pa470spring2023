@@ -1,0 +1,239 @@
+---
+title: "Week 4 Tidymodels & GLM"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    theme: sandstone
+    number_sections: true
+---
+
+```{r initial_setup, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(lubridate)
+library(kableExtra)
+library(scales)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      eval= TRUE)
+
+theme_set(theme_bw())
+```
+
+# Tidymodels
+
+Last week we looked at broom (tidy, glance, augment), rsample (splitting data), parsnip (specifying models), and yardstick (evaluating models). For a brief review look at the solution to coding warmup 3 part 4.
+
+Some more helpful tools.
+
+Checking model specification
+
+```{r}
+parsnip::rand_forest() %>%  set_engine("ranger") %>% 
+  set_mode("regression")  %>% translate()
+
+#?rand_forest
+
+rand_forest(trees = 1000, min_n = 5) %>% 
+  set_engine("ranger", verbose = TRUE) %>% 
+  set_mode("regression") %>%
+  translate()
+
+#parsnip_addin()
+```
+
+As an aside, what is a random forest? It is an ensemble model (meaning it aggregates information from multiple models) which uses numerous decision trees to make predictions (many trees make a forest). In a classification case, usually the prediction is the class selected by the most trees. In the regression case, the average prediction from individual trees is returned.
+
+
+# GLM
+
+Let's run a very basic example on [Lending Club data](https://probably.tidymodels.org/articles/where-to-use.html).
+
+```{r}
+library(modeldata)
+data("lending_club")
+
+glimpse(lending_club)
+
+lending_club <- lending_club %>%
+  mutate(Class = relevel(Class, "good"))
+
+lending_club_mini <- lending_club %>%
+  select(Class, annual_inc, verification_status, sub_grade)
+
+lending_club_mini %>% count(Class)
+```
+
+Each row is a loan which is either Classified as good or bad.
+
+```{r}
+show_engines("logistic_reg")
+
+split <- initial_split(lending_club_mini)
+
+train <- training(split)
+test <- testing(split)
+
+train %>% count(Class)
+```
+
+We can see that there is a really large class imbalance. Most loans are good. This is something to watch out for! If our model 'predicts' every situation as good it will perform deceptively well.
+
+```{r}
+log_model <- logistic_reg() %>%
+  set_engine('glm') %>%
+  set_mode('classification') %>%
+  fit(Class ~ annual_inc + verification_status + sub_grade,
+      data = train)
+
+log_model %>% tidy()
+
+# log_model %>%
+#   car::vif()
+
+log_model %>% extract_fit_engine() %>%
+  car::vif()
+```
+
+Multicollinearity is a big issue. If variables are correlated to both the target variable(s) and themselves, the model will not be able to distuingish between their influence. Variance Inflation Factors, (vif 1, orthogonal/uncorrelated, >5 issue).
+
+```{r}
+preds <- log_model %>%
+  predict(test, type='prob')
+
+preds <- log_model %>%
+  predict(test, type='class')
+
+test_preds <- log_model %>% augment(test)
+
+test_preds %>% select(Class, .pred_class, .pred_good, .pred_bad)
+```
+
+We can predict a class metric or a class probability metric (recall from yardstick).
+
+```{r}
+test_preds %>% count(Class, .pred_class)
+ggplot(test_preds, aes(x=.pred_good, color=Class)) + geom_density()
+
+test_preds %>% group_by(Class) %>% summarize(mean(.pred_good), median(.pred_good))
+
+roc_auc(test_preds,
+        truth = Class,
+        estimate = .pred_good)
+
+roc_curve(test_preds,
+        truth = Class,
+        estimate = .pred_good) %>%
+  autoplot()
+
+specificity(test_preds,
+        truth = Class,
+        estimate = .pred_class )
+
+sensitivity(test_preds,
+        truth = Class,
+        estimate = .pred_class)
+
+test_preds %>% count(.pred_class)
+```
+
+We can see that this model always predicts good, but this model still has some ability to distinguish between classes. We just need to look at setting different probability thresholds. This will be something we explore more as the class goes on so don't worry if this seems complicated! 
+
+The `probably` package lets us find the threshold which maximizes sensitivity (true positives) and specificity (true negatives).
+
+```{r}
+threshold_data <- test_preds %>%
+  probably::threshold_perf(Class, .pred_good, thresholds = seq(0.5, 1, by = 0.0025))
+
+
+ggplot(threshold_data %>% filter(.metric != 'distance'), 
+       aes(x = .threshold, y = .estimate, color = .metric)) +
+  geom_line() +
+  scale_color_viridis_d(end = 0.9) +
+  scale_alpha_manual(values = c(.4, 1), guide = "none") +
+  labs(
+    x = "'Good' Threshold\n(above this value is considered 'good')",
+    y = "Metric Estimate",
+    title = "Balancing performance by varying the threshold",
+    subtitle = "Sensitivity or specificity alone might not be enough!\nVertical line = Max J-Index"
+  )
+
+max_threshold <- threshold_data %>% filter(.metric == 'j_index') %>%
+  filter(.estimate==max(.estimate)) %>%
+  pull(.threshold)
+
+test_preds2 <- test_preds %>%
+  mutate(.pred = probably::make_two_class_pred(.pred_good, levels(Class), threshold = max_threshold)) %>%
+  select(Class, contains(".pred"))
+
+test_preds2 %>% count(.pred)
+
+precision(test_preds2,
+        truth = Class,
+        estimate = .pred_class) 
+recall(test_preds2,
+        truth = Class,
+        estimate = .pred_class) 
+f_meas(test_preds2,
+        truth = Class,
+        estimate = .pred_class) 
+```
+
+# Regularlized Regression
+
+```{r}
+
+split <- initial_split(lending_club)
+
+train <- training(split)
+test <- testing(split)
+
+
+log_model2 <- logistic_reg(penalty = 0.1) %>%
+  set_engine('glmnet') %>%
+  set_mode('classification') %>%
+  fit(Class ~ .,
+      data = train)
+
+log_model2 %>% tidy() %>% filter(abs(estimate) > 0)
+
+log_model3 <- logistic_reg(penalty = 0.01) %>%
+  set_engine('glmnet') %>%
+  set_mode('classification') %>%
+  fit(Class ~ .,
+      data = train)
+
+log_model3 %>% tidy() %>% filter(abs(estimate) > 0)
+
+test_preds_l3 <- log_model3 %>% augment(test)
+
+roc_curve(test_preds_l3,
+        truth = Class,
+        estimate = .pred_good) %>%
+  autoplot()
+
+roc_auc(test_preds_l3,
+        truth = Class,
+        estimate = .pred_good)
+
+log_model4 <- logistic_reg(penalty = 0.001) %>%
+  set_engine('glmnet') %>%
+  set_mode('classification') %>%
+  fit(Class ~ .,
+      data = train)
+
+log_model4 %>% tidy() %>% filter(abs(estimate) > 0)
+
+test_preds_l4 <- log_model4 %>% augment(test)
+
+roc_curve(test_preds_l4,
+        truth = Class,
+        estimate = .pred_good) %>%
+  autoplot()
+
+roc_auc(test_preds_l4,
+        truth = Class,
+        estimate = .pred_good)
+```
+

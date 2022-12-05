@@ -1,0 +1,198 @@
+---
+title: "Calendar"
+date: 2022-01-13T00:00:00-00:00
+categories: ["R"]
+tags: ["calendar"]
+publishdate: 2022-01-01T00:00:00-00:00
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+
+#https://www.technologyreview.com/2022/04/19/1049996/south-africa-ai-surveillance-digital-apartheid/
+
+```
+
+# PA 470 – Artificial Intelligence and Machine Learning in the Public Sector
+
+*Public sector applications of artificial intelligence and machine learning. Philosophical foundations of artificial intelligence and major frameworks for learning.*
+
+
+
+Artificial intelligence (AI) and machine learning (ML) have transformed the private sector pressuring the public sector to follow suit and become *smart* by adopting AI/ML. 
+Yet, public sector applications differ greatly from private sector ones where issues like data availability and equity can be easily sidestepped.
+Key assumptions of AI/ML models often conflict with traditional principles of government like transparency, accountability, universality, and equality/equity. 
+
+In this course, we will explore critical issues with AI/ML in the public sector and learn simple applications in R and `tidymodels` to provide public sector technologists with adequate tools to navigate AI/ML in government.
+
+**Assignments and readings should be completed before the week listed, unless otherwise noted.**
+
+## Week 1, 1/13 (online)
+
+*Introductions, Course Technology Stack, and Review*
+
+- [Can a Machine Learn Morality?](https://www.nytimes.com/2021/11/19/technology/can-a-machine-learn-morality.html)
+- [Ask Delphi](https://delphi.allenai.org/?a1=Women+are+better+than+men.)
+- [Crime Prediction Software Promised to Be Free of Biases. New Data Shows It Perpetuates Them](https://themarkup.org/prediction-bias/2021/12/02/crime-prediction-software-promised-to-be-free-of-biases-new-data-shows-it-perpetuates-them)
+- [Crime Prediction Keeps Society Stuck in the Past](https://www.wired.com/story/crime-prediction-racist-history/)
+- Chapter 6, Data Science for Public Policy (DSPP)
+
+## Week 2, 1/20 (online)
+
+*Review, Conceptual Foundations, and Geospatial*
+
+- [tidymodels, Chapters 1-2 & Section 3.1](https://www.tmwr.org/index.html)
+- Chapter 12, DSPP
+- [sf](https://r-spatial.github.io/sf/)
+- [tidycensus](https://walker-data.com/tidycensus/)
+- [Urban Institute Guide](https://urbaninstitute.github.io/r-at-urban/mapping.html#Introduction)
+
+**Assignment: [Coding Warmup 1](/coding-warmup-1)**
+
+## Week 3, 1/27 (online)
+
+*Coding 1*
+
+- [tidymodels, Chapters 3-4](https://www.tmwr.org/index.html)
+- Chapter 7 & Sections 8.1/8.2, DSPP
+
+**Assignment: [Coding Warmup 2](/coding-warmup-2)**
+
+## Week 4, 2/3 (online)
+
+- Chapter 8, DSPP (continued)
+- [tidymodels, Chapters 5-6 Fitting/Linear](https://www.tmwr.org/index.html)
+
+*Public Sector Case Studies*
+
+- [A Catalog of Civic Data Use Cases](https://datasmart.ash.harvard.edu/news/article/how-can-data-and-analytics-be-used-to-enhance-city-operations-723)
+- [New York City Artifical Intelligence Strategy](https://www1.nyc.gov/assets/cto/downloads/ai-strategy/nyc_ai_strategy.pdf)
+- [Secretary Antony J. Blinken at the National Security Commission on Artificial Intelligence’s (NSCAI) Global Emerging Technology Summit](https://www.state.gov/secretary-antony-j-blinken-at-the-national-security-commission-on-artificial-intelligences-nscai-global-emerging-technology-summit/)
+- [Cook County Assessor Residential Valuation Model](https://gitlab.com/ccao-data-science---modeling/models/ccao_res_avm/-/tree/2021-assessment-year)
+- [Summary of Agency Compliance Reporting, NYC Algorithms](https://www1.nyc.gov/assets/ampo/downloads/pdf/AMPO-CY-2020-Agency-Compliance-Reporting.pdf)
+- [Preparing for the Future of Artifical Intelligence](https://obamawhitehouse.archives.gov/sites/default/files/whitehouse_files/microsites/ostp/NSTC/preparing_for_the_future_of_ai.pdf)
+- [Data Driven Information and the brave new world of smart firefighting](https://www.nfpa.org/-/media/Files/News-and-Research/Resources/Research-Foundation/Current-projects/Smart-FF/SmartFFNFPAJournalDataDriven.ashx)
+
+**Assignment: [Reading Response 1, Case Study](/reading-response-1) & [Coding Warmup 3](/coding-warmup-3)**
+
+## Week 5, 2/10 (online)
+
+*Coding 2*
+
+- [Predictive Tools for Public Safety](https://datasmart.ash.harvard.edu/news/article/predictive-tools-for-public-safety-506)
+- [tidymodels, Chapter 7-8 Workflow & Recipies](https://www.tmwr.org/index.html)
+
+**Assignment: [Detroit Part 1, Due 2/13](/detroit)**
+
+## Week 6, 2/17
+
+- Chapter 9, DSPP
+- [tidymodels, Chapter 9 Effectiveness](https://www.tmwr.org/index.html)
+
+*Ethics: Government's Black Box*
+
+- [A City Is a City — Against the metaphorization of data](https://everestpipkin.medium.com/a-city-is-a-city-against-the-metaphorization-of-data-2139be087a71)
+- [ai.gov](https://www.ai.gov/)
+- [Crafting an AI strategy for government leaders](https://www2.deloitte.com/us/en/insights/industry/public-sector/ai-strategy-for-government-leaders.html)
+- [Using AI and machine learning to reduce government fraud](https://www.brookings.edu/research/using-ai-and-machine-learning-to-reduce-government-fraud/)
+- [Fragile Algorithms and Fallible DecisionMakers: Lessons from the Justice System](https://pubs.aeaweb.org/doi/pdfplus/10.1257/jep.35.4.71)
+- [REPORT: How to make AI work in government and for people, Case Studies](https://www.centreforpublicimpact.org/insights/how-to-make-ai-work-in-government-and-for-people)
+
+**Assignment: [Response 2, Relationships](/reading-response-2)**
+
+## Week 7, 2/24
+
+*Coding 3*
+
+- [Model Evaluation, Model Selection, and Algorithm Selection in Machine Learning](https://arxiv.org/pdf/1811.12808.pdf)
+- Sections 10.0-10.4, DSPP
+
+**Assignment: [Detroit Part 2](/detroit)**
+
+## Week 8, 3/3
+
+*Coding 4*
+
+- Sections 10.5-10.6, DSPP
+- [tidymodels, Chapter 10-11 Resampling](https://www.tmwr.org/index.html)
+
+## Week 9, 3/10
+
+*Ethical Critiques*
+
+- Chapter 14, DSPP
+
+### Read 4
+
+- [It's COMPASlicated: The Messy Relationship between RAI Datasets and Algorithmic Fairness Benchmarks](https://arxiv.org/abs/2106.05498)
+- [Excavating AI](https://excavating.ai/)
+- [Assembling Accountability](https://datasociety.net/wp-content/uploads/2021/06/Assembling-Accountability.pdf)
+- [To Live in Their Utopia: Why Algorithmic Systems Create Absurd Outcomes](https://ali-alkhatib.com/papers/chi/utopia/utopia.pdf)
+- [Decolonial AI: Decolonial Theory as Sociotechnical Foresight in Artificial Intelligence](https://arxiv.org/pdf/2007.04068.pdf)
+- [Algorithmic Risk Assessments Can Alter Human Decision-Making Processes in High-Stakes Government Contexts](https://www.benzevgreen.com/wp-content/uploads/2021/08/21-cscw.pdf)
+
+
+Note: Introduce [final project](/final-project)
+
+**Assignment: [Reading Response 3, Ideals](/reading-response-3)**
+
+## Week 10, 3/17
+
+*Coding 4*
+
+- [tidymodels, Tuning Chapter 12-15](https://www.tmwr.org/index.html)
+
+**Assignment: [Detroit Part 3](/detroit)**
+
+
+## Week 11, 3/24
+
+Spring Vacation No Class
+
+## Week 12, 3/31
+
+
+*Detroit Presentations*
+
+- [tidymodels, Chapter 18 Understanding Models](https://www.tmwr.org/index.html)
+
+
+**Assignment: [Detroit Final Submission & Presentation](/detroit)**
+
+## Week 13, 4/7
+
+*Coding 5*
+
+- Chapter 11, DSPP
+- [In the Age of AI, Frontline](https://www.youtube.com/watch?v=5dZ_lvDgevk)
+- [Street–Level Algorithms: A Theory at the Gaps Between Policy and Decisions](https://dl.acm.org/doi/pdf/10.1145/3290605.3300760)
+
+**Assignment: [Final Project Proposal](/final-project), Due 4/4**
+
+## Week 14, 4/14
+
+*Coding 6*
+
+- Chapter 13, DSPP
+- [tidymodels, Chapter 16, 19, 20](https://www.tmwr.org/index.html)
+
+
+## Week 15, 4/21
+
+*Public Sector Careers*
+
+- Ch 5 Weapons of Math Destruction, on Blackboard
+- Chapter 15, DSPP
+
+## Week 16, 4/28
+
+*Final Presentations*
+
+**Assignment: [Final Project](/final-project), Due 4/28**
+
+# Course Inspired by...
+
+- [Linguistics 575, UW](https://faculty.washington.edu/ebender/2021_575/#foundations)
+- [CSE 599, UW](https://uw-cse599p.github.io/calendar/)
+- [Satej Soman](https://satejsoman.com/#/)
+- [PPOL 670, Georgetown](https://github.com/SigmaMonstR/data-science)

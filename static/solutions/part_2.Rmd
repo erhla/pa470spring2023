@@ -1,0 +1,540 @@
+---
+title: "Part 2"
+author: "Eric Langowski"
+output: 
+  html_document:
+    code_folding: hide
+    df_print: paged
+    theme: sandstone
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(tidymodels)
+theme_set(theme_bw())
+
+p1 <- "database/detroit.sqlite"
+p2 <- "static/solutions/database/detroit.sqlite"
+
+if(file.exists(p1)){
+  targf <- p1
+} else {
+  targf <- p2
+}
+
+con <- DBI::dbConnect(RSQLite::SQLite(), targf)
+
+# assessments <- dplyr::tbl(con, 'assessments') %>% collect()
+# sales <- dplyr::tbl(con, 'sales') %>% collect()
+# parcels <- dplyr::tbl(con, 'parcels') %>% collect()
+
+joined_mini <- dplyr::tbl(con, 'sales') %>%
+  mutate(year = as.double(str_sub(sale_date, 1, 4))) %>%
+  left_join(dplyr::tbl(con, 'assessments'), 
+            by=c('parcel_num'='PARCELNO', 'year')) %>%
+  filter(property_c == 401,
+         sale_price >= 2000,
+         ASSESSEDVALUE >= 1000,
+         between(year, 2012, 2019)) %>%
+  collect() %>%
+  filter(str_detect(str_to_lower(sale_terms), 'valid arm'))
+
+ratios <- cmfproperty::reformat_data(
+  joined_mini,
+  'sale_price',
+  'ASSESSEDVALUE',
+  'year'
+)
+
+stats <- cmfproperty::calc_iaao_stats(ratios)
+output <- cmfproperty::diagnostic_plots(ratios = ratios, stats = stats, min_reporting_yr =  2012, max_reporting_yr = 2019)
+```
+
+# Introduction
+
+The Detroit housing market has experienced historic levels of foreclosures, disinvestment, and demolitions. Over 1 in 4 properties has been foreclosed due to property tax foreclosure since 2011 and many of these foreclosures were due to inaccurate, inflated assessments. These assessments remain problematic even after the City of Detroit undertook its first citywide reassessment in over 60 years which became effective in 2017.
+
+Since the beginning of the coronavirus pandemic, tax foreclosures have been halted and assessments have become more accurate. Detroit's housing market has begun to recover with some neighborhoods even gentrifying. Yet, the system remains inequitable especially for low-income homeowners of color.
+
+```{r}
+output[[2]]
+```
+
+This analysis focuses on single family homes (class 401) which were taxable, sold for more than $2000, and marked as arm's length by the assessor. Additionally, using the `cmfproperty` package, the IAAO arm's length standard was applied to the data. This will present a conservative picture of the housing market in Detroit. Note that homes in Detroit as supposed to be assessed at most at 50% of their fair market value.
+
+```{r}
+output[[1]]
+```
+
+
+```{r}
+homes_counts <- dplyr::tbl(con, 'assessments') %>% filter(propclass == 401) %>%
+  count(year) %>% collect()
+
+ggplot(homes_counts, aes(x=year, y=n)) +
+  geom_line(color='light blue', size=2) +
+  scale_y_continuous(labels=scales::comma, limit=c(0, NA)) +
+  scale_x_continuous(breaks=scales::pretty_breaks()) +
+  labs(x='Year', y='Count of 401 properties', title='Number of Homes in Detroit \nDecreased from 2011')
+```
+
+# Sales Ratio Analysis
+
+The sales ratio is a key unit for analyzing the accuracy of assessments. It is calculated by taking the ratio of a property's sale price to its assessment at the time of sale. The sales ratios can be evaluated using metrics from the International Association of Assessing Officers.
+
+
+```{r}
+iaao <- cmfproperty::iaao_graphs(stats=stats, ratios=ratios, min_reporting_yr = 2012, max_reporting_yr = 2019, jurisdiction_name = 'Detroit')
+```
+
+`r iaao[[1]]`
+
+```{r}
+iaao[[2]]
+```
+
+`r iaao[[3]]`
+
+
+```{r}
+iaao[[4]]
+```
+
+`r iaao[[5]]`
+
+```{r}
+iaao[[6]]
+```
+
+```{r}
+bs <- cmfproperty::binned_scatter(ratios = ratios, min_reporting_yr = 2012, max_reporting_yr = 2019, jurisdiction_name = 'Detroit')
+```
+
+`r bs[[1]]`
+
+```{r}
+bs[[2]]
+```
+
+# Modeling Overassessment
+
+We have multiple questions to consider when modeling overassessment. First, we can only accurately judge if a home was overassessed if it sold. Second, since assessments were generally high, even though a ratio of 50% is the 'perfect' assessment, a cutoff of 50% may not truly be the best way to model overassessment.
+
+```{r}
+gdata_16 <- ratios %>% filter(SALE_YEAR == 2016) %>%
+  group_by(sale_bin = ntile(SALE_PRICE, 10)) %>%
+  summarize(`Percent Over 50%` = length(parcel_num[RATIO > .5]) / n(),
+            `Percent Over 100%` = length(parcel_num[RATIO > 1]) / length(parcel_num[RATIO > .5]))
+
+ggplot(gdata_16, aes(x=sale_bin, y=`Percent Over 100%`)) +
+  geom_point() + geom_line() +
+  labs(x='Sale Decile', title='Rate of Extreme Overassessment by Bin',
+       y='Share of Extremely Overassessed Properties') +
+  scale_y_continuous(labels=percent)
+```
+
+The above figure shows the rate of extreme overassessment in 2016, or proportion of overassessed properties which were extremely overassessed. Extreme overassessment is defined as properties assessed at more than twice their sale price. Lower value properties are much more likely to be extremely overassessed.
+
+```{r}
+ggplot(ratios %>% filter(SALE_YEAR == 2016), aes(x=RATIO)) + geom_boxplot()
+
+ggplot(ratios %>% filter(SALE_YEAR == 2016), aes(x=RATIO)) + geom_density()
+```
+
+## Creating Classes
+
+About 33% of ratios are less than .4, 33% are between .4 and .67, and 33% are above .67. It is clear that there are significant differences between a ratio of 1 and .2, but any boundary we select will create difficulties predicting class differences where ratios of say .49 and .51 are on different sides of the boundary.
+
+Let's try three classifications schemes. 
+
+First, in order to capture some of this variability between high and low ratios, let's choose multiple classes arbitrarily:
+
+- Underassessed, ratio <= .4 (assessed at 80% or less of sale price)
+- Normally assessed, .4 < ratio <= .67 (assessed between 80% and 125% of sale price)
+- Over assessed, .67 < ratio (assessed at more than 125% of sale price)
+
+Second, just let underassessed be ratio <= .5 and overassessed be ratio > .5.
+
+Third, have extremely overassessed properties have ratio >= .8 with other properties ratio < .8
+
+```{r}
+targ_ratios <- ratios %>% filter(between(SALE_YEAR, 2014, 2019)) %>%
+  mutate(class = case_when(
+    RATIO <= .4 ~ 'Under',
+    RATIO <= .67 ~ 'Normal',
+    TRUE ~ 'Over'
+  ),
+  class = factor(class, levels = c('Under', 'Normal', 'Over')),
+  class2 = if_else(RATIO <= .5, 'Under', 'Over'),
+  class3 = if_else(RATIO <= .8, 'Under', 'Over'))
+```
+
+### Classification Counts for Method 1
+
+```{r}
+targ_ratios %>% count(class) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+### Classification Counts for Method 2
+
+```{r}
+targ_ratios %>% count(class2) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+
+### Classification Counts for Method 3
+
+```{r}
+targ_ratios %>% count(class3) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+## Specifications
+
+
+
+```{r}
+joined_ratios <- 
+  targ_ratios %>%
+  select(parcel_num,
+         sale_date,
+         SALE_PRICE,
+         ecf,
+         ASSESSED_VALUE,
+         TAXABLEVALUE,
+         RATIO,
+         class, class2, class3,
+         SALE_YEAR) %>%
+  mutate(sale_date = ymd(sale_date)) %>%
+  left_join(
+    dplyr::tbl(con, 'parcels') %>% select(
+      parcel_number,
+      zip_code,
+      total_square_footage,
+      total_acreage,
+      frontage,
+      depth,
+      total_floor_area,
+      year_built,
+      X,
+      Y
+    ) %>% distinct() %>% collect(),
+    by=c('parcel_num'='parcel_number')
+  ) %>%
+  filter(!is.na(X)) %>% tibble() %>%
+  mutate(sp_log = log10(SALE_PRICE))
+
+joined_classification <- joined_ratios %>% filter(SALE_YEAR == 2016)
+```
+
+Combining information from the sales, assessments, and parcels table, our formula is:
+
+`class ~ total_square_footage + ASSESSED_VALUE + year_built + X + Y`
+
+```{r, include=FALSE}
+cor_output <- corrr::correlate(joined_classification %>% 
+                   select(total_square_footage, ASSESSED_VALUE,
+                          year_built, X, Y)) %>%
+  corrr::fashion()
+```
+
+
+```{r}
+cor_output %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+Since we don't have a lot of arm's length sales in 2016 (about 4200), we may want to use a training method which resamples our data. Initially, I will use 10-fold cross validation to train and aggregate ten models. For our classification model, we will initially use a random forest of 500 trees. More on that later.
+
+### recipe
+
+```{}
+recipe(class ~ 
+  parcel_num + total_square_footage + ASSESSED_VALUE +
+  year_built + X + Y, 
+  data=joined_classification) %>%
+  update_role(parcel_num, new_role = 'PARCELID') %>%
+  step_log(ASSESSED_VALUE) %>%
+  step_interact(~c(ASSESSED_VALUE, total_square_footage, X, Y)) %>%
+  step_impute_linear(total_square_footage, year_built, X, Y) %>%
+  step_ns(X, Y) %>%
+  prep()
+```
+
+Our recipe is above. Key steps highlighted:
+
+- Logging assessed value, ensures we capture variability in assessed value which ranges from 1000 to 120000.
+- Imputing missing values for total square footage and year built. About fifty sales do not have values for these fields and a simple imputation method is used.
+- Create a spline term for latitude and longitude, since lat/lon have a nonlinear relationship with assessed value. Doesn't make a huge difference.
+
+```{r, echo=FALSE}
+library(patchwork)
+p1 <- ggplot(joined_classification, aes(x=X, y=ASSESSED_VALUE)) +
+  geom_point(alpha=.2) +
+  scale_y_log10() +
+  geom_smooth()
+
+p2 <- ggplot(joined_classification, aes(x=Y, y=ASSESSED_VALUE)) +
+  geom_point(alpha=.2) +
+  scale_y_log10() +
+  geom_smooth()
+
+p1 / p2
+```
+
+## Workflow Prep
+
+Our `tidymodels` workflow requires a model, formula, and recipe. Some of these pieces will be the same across our three specifications.
+
+
+```{r}
+folds <- rsample::vfold_cv(joined_classification, v = 10)
+
+class_model <-
+  rand_forest(trees = 500) %>%
+  set_mode('classification') %>%
+  set_engine('ranger')
+
+
+class_recipe <- recipe(class + class2 + class3 ~ 
+                          parcel_num + total_square_footage + ASSESSED_VALUE +
+                         year_built + X + Y, 
+                       data=joined_classification) %>%
+  update_role(parcel_num, new_role = 'PARCELID') %>%
+  step_log(ASSESSED_VALUE) %>%
+  step_interact(~c(ASSESSED_VALUE, total_square_footage, X, Y)) %>%
+  step_impute_linear(total_square_footage, year_built, X, Y) %>%
+  step_ns(X, Y, deg_free = 20) %>%
+  step_corr(all_predictors()) %>%
+  prep()
+
+class_recipe
+
+class_recipe %>% summary() %>% view()
+
+bake(class_recipe,
+     joined_classification) %>% view()
+
+```
+
+## Specification 1, Multi Class
+
+```{r}
+first_workflow <-
+  workflow() %>%
+  add_model(class_model) %>%
+  add_recipe(class_recipe %>%
+               update_role(class2, new_role='not used') %>%
+               update_role(class3, new_role='not used'))
+model_fit <- first_workflow %>%
+  fit_resamples(folds, control=control_resamples(save_pred=TRUE))
+```
+
+
+```{r}
+#collect_metrics(model_fit, summarize=FALSE)
+our_results <- collect_metrics(model_fit, summarize=TRUE)
+our_results %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+#collect_predictions(model_fit)
+our_preds <- collect_predictions(model_fit, summarize=TRUE) 
+our_preds %>%
+  count(.pred_class) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+conf_mat(our_preds, estimate=.pred_class, truth=class) 
+```
+
+Our model has pretty mediocre accuracy of `r str_glue("{our_results %>% filter(.metric=='accuracy') %>% pull(mean) %>% round(3)}")`. We might not have enough separations to predict three classes like this, although the most common prediction for each class was the correct class.
+
+## Specification 2, Binary
+
+```{r}
+second_workflow <-
+  workflow() %>%
+  add_model(class_model) %>%
+  add_recipe(class_recipe %>%
+               update_role(class, new_role='not used') %>%
+               update_role(class3, new_role='not used'))
+model_fit2 <- second_workflow %>%
+  fit_resamples(folds, control=control_resamples(save_pred=TRUE))
+```
+
+
+```{r}
+our_results <- collect_metrics(model_fit2, summarize=TRUE)
+our_results %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+our_preds <- collect_predictions(model_fit2, summarize=TRUE) 
+our_preds %>%
+  count(.pred_class) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+conf_mat(our_preds, estimate=.pred_class, truth=class2) 
+```
+
+Better but not great still!
+
+## Specification 3, Binary cutoff at .8
+
+```{r}
+third_workflow <-
+  workflow() %>%
+  add_model(class_model) %>%
+  add_recipe(class_recipe %>%
+               update_role(class, new_role='not used') %>%
+               update_role(class2, new_role='not used'))
+model_fit3 <- third_workflow %>%
+  fit_resamples(folds, control=control_resamples(save_pred=TRUE))
+```
+
+
+```{r}
+our_results <- collect_metrics(model_fit3, summarize=TRUE)
+our_results %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+our_preds <- collect_predictions(model_fit3, summarize=TRUE) 
+our_preds %>%
+  count(.pred_class) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+conf_mat(our_preds, estimate=.pred_class, truth=class3) 
+```
+
+Lots of incorrectly predicted classes here.
+
+## Classifier Accuracy Metrics
+
+Based on our three possible specifications, I'm going to analyze specification two for now.
+
+```{r}
+our_preds <- collect_predictions(model_fit2, summarize=TRUE) 
+multi_metric <- metric_set(recall, specificity, precision, accuracy, f_meas)
+multi_metric(our_preds, truth=class2, estimate=.pred_class) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+Some initial views on our model:
+
+```{r}
+joined_classification %>%
+  mutate(pred = our_preds$.pred_class,
+         bin = ntile(SALE_PRICE, 10)) %>%
+  group_by(bin) %>%
+  summarize(avg_sp = dollar(mean(SALE_PRICE)),
+            share_correct = percent(sum(class2 == pred) / n()),
+            share_over = percent(sum(class2 == 'Over') / n()))  %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+```{r}
+roc_curve(our_preds, class2, .pred_Over) %>%
+  autoplot()
+```
+
+# Modeling Assessment
+
+Generating our own assessments (for 2019) is very similar to modeling overassessment. Initially, I will use the same recipe and formula except replacing class with sale price.  I will also demonstrate the xgboost (boosted decision tree) package. Boosted decision trees are similar to random forests except each tree is created iteratively in a process of continuous improvement.
+
+Training and testing will occur across 2014 to 2018 with a 90/10 split based on time. Predictions will then be made for 2019 compared to the baseline of actual assessed values. Workflow is the same except that xgboost requires us to bake our data first.
+
+```{r}
+time_split <- rsample::initial_time_split(
+  joined_ratios %>% filter(between(SALE_YEAR, 2013, 2018)) %>% 
+    arrange(sale_date),
+  .9)
+
+train <- training(time_split) 
+test <- testing(time_split)
+
+reg_model <- boost_tree(trees=200) %>%
+  set_mode('regression') %>%
+  set_engine('xgboost')
+
+reg_recipe <- recipe(sp_log ~ total_square_footage +
+                         year_built + X + Y + sale_date,
+                       data=train) %>%
+  step_date(sale_date, features = c("dow", "month", "year"), keep_original_cols = FALSE) %>%
+  step_interact(~c(total_square_footage, X, Y)) %>%
+  step_impute_linear(total_square_footage, year_built, X, Y) %>%
+  step_dummy(all_nominal(), one_hot = TRUE) %>%
+  prep()
+
+reg_recipe %>% bake(train)
+
+reg_workflow <-
+  workflow() %>%
+  add_model(reg_model) %>%
+  add_recipe(reg_recipe)
+```
+
+## Model Evaluation
+
+```{r}
+model_fit_reg <- reg_workflow %>%
+  fit(train)
+
+our_preds <- model_fit_reg %>% augment(train)
+
+multi_metric <- metric_set(mape, rmse, rsq)
+multi_metric(our_preds, truth=sp_log, estimate=.pred) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+Our model:
+
+```{r}
+our_preds <- model_fit_reg %>% augment(
+  test
+)
+
+multi_metric(our_preds, truth=sp_log, estimate=.pred) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+Actual assessments:
+
+```{r}
+multi_metric(our_preds, truth=sp_log, estimate=log10(2*ASSESSED_VALUE)) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+```{r}
+ratios <- cmfproperty::reformat_data(
+  our_preds %>% mutate(av_pred = 0.5 * 10^.pred),
+  'SALE_PRICE',
+  'av_pred',
+  'SALE_YEAR'
+)
+
+bs <- cmfproperty::binned_scatter(ratios = ratios, min_reporting_yr = 2018, max_reporting_yr = 2018,
+                                  jurisdiction_name = 'Detroit')
+
+
+```
+
+
+`r bs[[1]]`
+
+```{r}
+bs[[2]]
+```

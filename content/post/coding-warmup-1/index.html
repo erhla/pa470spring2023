@@ -1,0 +1,58 @@
+---
+title: "Coding Warmup 1"
+date: 2022-01-20T00:00:00-00:00
+categories: ["R"]
+tags: ["warmup"]
+publishdate: 2022-01-01T00:00:00-00:00
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>This assignment is ungraded. I encourage you to review the problems to see if (1) you know how to do them or (2) if you know how to google how to do it. If either path forward escapes you, I suggest that you complete this assignment.</p>
+<div id="part-1" class="section level1">
+<h1>Part 1</h1>
+<p>Download <a href="https://datacatalog.cookcountyil.gov/Property-Taxation/Cook-County-Assessor-s-Residential-Modeling-Charac/8f9d-wy2d">Cook County Assessor’s Residential Modeling Characteristics (Chicago)</a>. Load this into R using <code>read_csv</code>. Either set your file directory using a R project or create a variable with the path of the folder the file is located in. Do not use absolute paths!</p>
+<p>Note you can also use urls in <code>read_csv</code> directly.</p>
+</div>
+<div id="part-2" class="section level1">
+<h1>Part 2</h1>
+<p>How many <em>single family</em> homes are included in the data? Out of all the residential properties, what is the most common class? Hint: You may have to look up appropriate Property Classes.</p>
+<pre><code>## [1] 289388</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##   `Property Class`      n
+##              &lt;dbl&gt;  &lt;int&gt;
+## 1              299 236813</code></pre>
+</div>
+<div id="part-3" class="section level1">
+<h1>Part 3</h1>
+<p>Using <code>lubridate</code>, calculate some information on sales:</p>
+<ul>
+<li>Number of sales in any January</li>
+<li>Number of sales in 2020</li>
+<li>Number of sales on January 2020</li>
+<li>Number of sales on your birthday (or favorite day)</li>
+<li>Number of sales on Wednesday (or your favorite day of the week)</li>
+</ul>
+<pre><code>## [1] 6591</code></pre>
+<pre><code>## [1] 24701</code></pre>
+<pre><code>## [1] 1813</code></pre>
+<pre><code>## [1] 67</code></pre>
+<pre><code>## [1] 15540</code></pre>
+</div>
+<div id="part-4" class="section level1">
+<h1>Part 4</h1>
+<p>Using <code>ggplot2</code>, make the following plots:</p>
+<ol style="list-style-type: lower-alpha">
+<li>Average sale price by number of bedrooms. Use class 203 only and only include values with at least 1000 sales.</li>
+</ol>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<ol start="2" style="list-style-type: lower-alpha">
+<li>Sales over time. First, show 2018 to present.</li>
+</ol>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<ol start="3" style="list-style-type: lower-alpha">
+<li>March and April 2020 sales. Then, use <code>scale_x_date</code> (or <code>scale_x_datetime</code> if appropriate) on the x-axis to set the date breaks 10 days apart and date labels as month/day of month (e.g. 3/9). Shade in the region of the graph after the pandemic began.</li>
+</ol>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
+</div>

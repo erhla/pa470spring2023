@@ -1,0 +1,486 @@
+---
+title: "Week 10"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    theme: sandstone
+---
+
+```{r initial_setup, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(lubridate)
+library(kableExtra)
+library(scales)
+knitr::opts_chunk$set(warning = FALSE)
+
+theme_set(theme_bw())
+```
+
+**NOTE currently there's an issue with the package version on CRAN. run `devtools::install_github("tidymodels/tune")`**
+
+# Introduction
+
+This week we are going to learn a series of techniques which allow us to heuristically *search for* the best model. Unlike the traditional regression context, the best ML models are often constructed through iteration or comparison of many model results to each other. These methods either search the **parameter space** which includes all the possible values of model hyperparameters or **model space** which includes different types of models (e.g. KNN, random forest, etc.). Each search requires determining what should be optimized.
+
+# Chapter 12, Model Tuning
+
+In ordinary linear regression, we directly estimate model coefficients from the data.
+
+$$ y_i = \beta_0 + \beta_1 x_i + \epsilon_i$$
+
+$$\hat \beta_1 = \frac{\sum_i (y_i-\bar{y})(x_i-\bar{x})}{\sum_i(x_i-\bar{x})^2}$$ 
+
+$$\hat \beta_0 = \bar{y}-\hat \beta_1 \bar{x}.$$
+
+In the ML context, a **tuning parameter** or **hyperparameter** is an unknown structural or other kind of value that has significant impact on the model but _cannot be directly estimated from the data_. 
+
+$$\hat y = \frac{1}{K}\sum_{\ell = 1}^K x_\ell^*$$
+
+This is the formula to predict a new value in the $K$-nearest neighbor model. The key is that the model itself is not defined by a model equation; the prediction equation shown above defines it. This means that you cannot directly 'solve' for K.
+
+## 12.1, Tuning Parameters for Different Models
+
+Each model has different hyperparameters to be tuned. An example is boosting.
+
+Boosting is an ensemble method that combines a series of base models, each of which is created sequentially and depends on the previous models. The number of boosting iterations is an important parameter that usually requires optimization.
+
+## 12.2, What do we optimize?
+
+Deciding what to optimize is highly situational and model dependent. The textbook shows a series of different metrics. An example which is relevant to our class is calculating the area under a ROC curve for multiple different models.
+
+```{r}
+library(tidymodels)
+data(two_class_dat)
+
+split <- initial_split(two_class_dat)
+training_set <- training(split)
+testing_set  <-  testing(split)
+
+ggplot(training_set, aes(x = A, y = B, color = Class, pch = Class)) + 
+  geom_point(alpha = 0.7) + 
+  coord_equal()  + 
+  labs(x = "Predictor A", y = "Predictor B", color = NULL, pch = NULL) +
+  scale_color_manual(values = c("#CC6677", "#88CCEE")) + theme(legend.position='top')
+```
+
+Here we have two predictors and two classes. Let's evaluate three glm models (logistic, probit, and c-log-log) and compare the results.
+
+```{r}
+rs <- vfold_cv(training_set, repeats = 10)
+# Return the individual resampled performance estimates:
+lloss <- function(...) {
+  perf_meas <- metric_set(roc_auc, mn_log_loss)
+    
+  logistic_reg() %>% 
+    set_engine("glm", ...) %>% 
+    fit_resamples(Class ~ A + B, rs, metrics = perf_meas) %>% 
+    collect_metrics(summarize = FALSE) %>%
+    select(id, id2, .metric, .estimate)
+}
+resampled_res <- 
+  bind_rows(
+    lloss()                                    %>% mutate(model = "logistic"),
+    lloss(family = binomial(link = "probit"))  %>% mutate(model = "probit"),
+    lloss(family = binomial(link = "cloglog")) %>% mutate(model = "c-log-log")     
+  ) %>%
+  # Convert log-loss to log-likelihood:
+  mutate(.estimate = ifelse(.metric == "mn_log_loss", -.estimate, .estimate)) %>% 
+  group_by(model, .metric) %>% 
+  summarize(
+    mean = mean(.estimate, na.rm = TRUE),
+    std_err = sd(.estimate, na.rm = TRUE) / sum(!is.na(.estimate)), 
+    .groups = "drop"
+  )
+
+resampled_res %>% 
+  filter(.metric == "roc_auc") %>% 
+  ggplot(aes(x = mean, y = model)) + 
+  geom_point() + 
+  geom_errorbar(aes(xmin = mean - 1.96 * std_err, xmax = mean+ 1.96 * std_err),
+                width = .1) + 
+  labs(y = NULL, x = "area under the ROC curve")
+```
+
+If one of the models had a CI which was significantly better, that would be a reasonable basis to select that model.
+
+## 12.3, Poor Parameter Estimates
+
+Key to avoid overfitting your data. A typical sign of overfitting is a significant decrease in performance when comparing training and testing metrics.
+
+![](https://www.tmwr.org/figures/two-class-boundaries-1.png)
+
+
+## 12.4, General Optimization Strategies
+
+Grid search, pre-define a set of parameter values to evaluate
+
+Iterative search, a nonlinear optimization method where new parameter combinations are generated based on previous results.
+
+![](https://www.tmwr.org/figures/tuning-strategies-1.png)
+
+## 12.5, Tuning
+
+We can tune numerous parameters such as `step_other` where we recode a categorical variable as other if its occurrence is below a threshold or the number of data points required to execute a split in a tree model.
+
+`parsnip`/`tidymodels` serves to abstract many model specific arguments. Generally, we will only focus on main arguments. For example, the `rand_forest()` function has main arguments `trees`, `min_n`, and `mtry` since these are most frequently specified or optimized. Engine-specific arguments can be based into `set_engine()`.
+
+To set tuning arguments, we assign a parameter the value of `tune()`. For example,
+
+```{r}
+knn_model_to_tune <- 
+  nearest_neighbor(neighbors = tune()) %>%
+  set_engine('kknn')
+```
+
+Setting neighbors to tune tags the parameter for optimization.
+
+```{r}
+extract_parameter_set_dials(knn_model_to_tune)
+
+extract_parameter_dials(knn_model_to_tune, 'neighbors')
+```
+
+The results show a value of `nparam[+]`, indicating that the number of hidden units is a *numeric* parameter.
+
+# 13 Grid Search
+
+```{r}
+
+mlp_spec <- 
+  mlp(hidden_units = tune(), penalty = tune(), epochs = tune()) %>% 
+  set_engine("nnet", trace = 0) %>% 
+  set_mode("classification")
+
+mlp_param <- extract_parameter_set_dials(mlp_spec)
+
+mlp_param %>% extract_parameter_dials("hidden_units")
+
+mlp_param %>% extract_parameter_dials("penalty")
+
+mlp_param %>% extract_parameter_dials("epochs")
+
+```
+
+## 13.1
+
+Regular Grids
+
+```{r}
+crossing(
+  hidden_units = 1:3,
+  penalty = c(0.0, 0.1),
+  epochs = c(100, 200)
+)
+
+grid_regular(mlp_param, levels = 2)
+
+mlp_param %>% 
+  grid_regular(levels = c(hidden_units = 3, penalty = 2, epochs = 2))
+```
+
+Irregular Grids
+
+```{r}
+mlp_param %>% 
+  grid_random(size = 1000) %>% # 'size' is the number of combinations
+  summary()
+```
+
+
+```{r}
+
+library(ggforce)
+mlp_param %>% 
+  # The 'original = FALSE' option keeps penalty in log10 units
+  grid_random(size = 20, original = FALSE) %>% 
+  ggplot(aes(x = .panel_x, y = .panel_y)) + 
+  geom_point() +
+  geom_blank() +
+  facet_matrix(vars(hidden_units, penalty, epochs), layer.diag = 2) + 
+  labs(title = "Random design with 20 candidates")
+```
+
+
+A much better approach is to generate a grid with the intent of filling the parameter space.
+
+```{r}
+mlp_param %>% 
+  grid_latin_hypercube(size = 20, original = FALSE) %>% 
+  ggplot(aes(x = .panel_x, y = .panel_y)) + 
+  geom_point() +
+  geom_blank() +
+  facet_matrix(vars(hidden_units, penalty, epochs), layer.diag = 2) + 
+  labs(title = "Latin Hypercube design with 20 candidates")
+```
+
+The default design used by the `tune` package is the maximum entropy design. These tend to produce grids that cover the candidate space well and drastically increase the chances of finding good results.
+
+## 13.2 Evaluating Grids
+
+Recall how we used `fit_resamples()` to use cross fold validation to evaluate models previously. In that case, we used resampling to improve the accuracy of model evaluation estimates instead of testing different models.
+
+Let's create a grid of different models and select the best one. From the textbook,
+
+We use a classification data set to demonstrate model tuning in this and the next chapter. The data come from Hill et al. (2007), who developed an automated microscopy laboratory tool for cancer research. The data consists of 56 imaging measurements on 2019 human breast cancer cells. These predictors represent shape and intensity characteristics of different parts of the cells (e.g., the nucleus, the cell boundary, etc.). There is a high degree of correlation between the predictors. For example, there are several different predictors that measure the size and shape of the nucleus and cell boundary. Also, individually, many predictors have skewed distributions.
+
+Each cell belongs to one of two classes. Since this is part of an automated lab test, the focus was on prediction capability rather than inference.
+
+```{r}
+data(cells)
+cells <- cells %>% select(-case)
+
+
+cell_folds <- vfold_cv(cells, v = 5)
+```
+
+As the textbook notes, since predictors are highly correlated, the use of PCA (principle component analysis) should be used to extract decorrelated predictors. Additionally, some of the predictors are skewed, so the textbook suggests using an additional series of transformations to create symmetric distributions.
+
+```{r}
+mlp_rec <-
+  recipe(class ~ ., data = cells) %>%
+  step_YeoJohnson(all_numeric_predictors()) %>% 
+  step_normalize(all_numeric_predictors()) %>% 
+  step_pca(all_numeric_predictors(), num_comp = tune()) %>% 
+  step_normalize(all_numeric_predictors())
+
+mlp_wflow <- 
+  workflow() %>% 
+  add_model(mlp_spec) %>% 
+  add_recipe(mlp_rec)
+```
+
+Then, for example, let's update the range of some of the dials.
+
+```{r}
+mlp_param <- 
+  mlp_wflow %>% 
+  extract_parameter_set_dials() %>% 
+  update(
+    epochs = epochs(c(50, 200)),
+    num_comp = num_comp(c(0, 40))
+  )
+```
+
+Note that num_comp is the number of components to retain as new predictors in `step_pca`.
+
+To start, let’s evaluate a regular grid with three levels across the resamples:
+
+```{r}
+roc_res <- metric_set(roc_auc)
+set.seed(1305)
+mlp_reg_tune <-
+  mlp_wflow %>%
+  tune_grid(
+    cell_folds,
+    grid = mlp_param %>% grid_regular(levels = 2),
+    metrics = roc_res
+  )
+mlp_reg_tune
+```
+
+```{r}
+autoplot(mlp_reg_tune) + 
+  scale_color_viridis_d(direction = -1) + 
+  theme(legend.position = "top")
+```
+
+For these data, the amount of penalization has the largest impact on the area under the ROC curve. The number of epochs doesn’t appear to have a pronounced effect on performance. The change in the number of hidden units appears to matter most when the amount of regularization is low (and harms performance). There are several parameter configurations that have roughly equivalent performance, as seen using the function `show_best()`
+
+```{r}
+show_best(mlp_reg_tune) %>% select(-.estimator)
+```
+
+Based on these results, it would make sense to conduct another run of grid search with larger values of the weight decay penalty.
+
+To use a space-filling design, either the `grid` argument can be given an integer or one of the `grid_*()` functions can produce a data frame. To evaluate the same range using a maximum entropy design with 20 candidate values:
+
+```{r}
+set.seed(1306)
+mlp_sfd_tune <-
+  mlp_wflow %>%
+  tune_grid(
+    cell_folds,
+    grid = 20,
+    # Pass in the parameter object to use the appropriate range: 
+    param_info = mlp_param,
+    metrics = roc_res
+  )
+mlp_sfd_tune
+```
+
+
+```{r}
+autoplot(mlp_sfd_tune)
+```
+
+This marginal effects plot shows the relationship of each parameter with the performance metric.
+
+The penalty parameter appears to result in better performance with smaller amounts of weight decay. This is the opposite of the results from the regular grid. Since each point in each panel is shared with the other three tuning parameters, the trends in one panel can be affected by the others. Using a regular grid, each point in each panel is equally averaged over the other parameters. For this reason, the effect of each parameter is better isolated with regular grids.
+
+## 13.3 Finalizing Model
+
+```{r}
+select_best(mlp_reg_tune, metric = "roc_auc")
+
+
+final_mlp_wflow <- 
+  mlp_wflow %>% 
+  finalize_workflow(select_best(mlp_reg_tune, metric = "roc_auc"))
+final_mlp_wflow
+
+final_mlp_fit <- 
+  final_mlp_wflow %>% 
+  fit(cells)
+```
+
+View  13.4/5 for additional grid methods
+
+# Chapter 14
+
+##  14.2, Bayesian Optimization
+
+Bayesian optimization techniques analyze the current resampling results and create a predictive model to suggest tuning parameter values that have yet to be evaluated. The suggested parameter combination is then resampled. These results are then used in another predictive model that recommends more candidate values for testing, and so on. The process proceeds for a set number of iterations or until no further improvements occur.
+
+### Gaussian Process Model
+
+Gaussian process (GP) are a collection of random variables by defining a probability distribution over possible functions. We use this to try and model the distribution of our performance metric across the tuning candidate values. To oversimplifying, you can think of GP as a way to map predictors (hyperparameters) to outcome (objective functions). GP can represent highly nonlinear relationships between model performance and tuning parameters through a small number of model evaluations.
+
+![](https://www.tmwr.org/premade/roc_surface.png)
+
+### Acquisition Functions
+
+Using the GP, we want to predict the next tuning parameter combination which will have "better results" than the current best. However, always moving towards "better results" may not end up with the best model. For example, imagine an outcome space where the chosen evaluation metric has multiple local maxima. You could end up 'stuck' at this maxima if your model heads too quickly to this point.
+
+Acquisition functions facilitate the trade-off between mean and variance. 
+
+- Exploration biases the selection towards regions where there are fewer (if any) observed candidate models. This tends to give more weight to candidates with higher variance and focuses on finding new results.
+- Exploitation principally relies on the mean prediction to find the best (mean) value. It focuses on existing results.
+
+To demonstrate, let's look at a toy example with a single parameter that has values between [0, 1] and the performance metric is $R^2$. The true function is shown below in red in along with 5 candidate values that have existing results.
+
+![](https://www.tmwr.org/figures/performance-profile-1.png)
+
+![](https://www.tmwr.org/figures/estimated-profile-1.png)
+
+
+From a pure exploitation standpoint, the best choice would select the parameter value that has the best mean prediction. Here, this would be a value of 0.106, just to the right of the existing best observed point at 0.09. 
+
+As a way to encourage exploration, a simple (but not often used) approach is to find the tuning parameter associated with the largest confidence interval. For example, by using a single standard deviation for the $R^2$ confidence bound, the next point to sample would be 0.236. This is more into the region with no observed results. Increasing the number of standard deviations used in the upper bound would push the selection further into empty regions. 
+
+One of the most commonly used acquisition functions is _expected improvement_. The notion of improvement requires a value for the current best results (unlike the confidence bound approach). Since the GP can describe a new candidate point using a distribution, we can weight the parts of the distribution that show improvement using the probability of the improvement occurring. 
+
+For example, consider two candidate parameter values of 0.10 and 0.25 (indicated by the vertical lines in the plot above). Using the fitted GP model, their predicted $R^2$ distributions are shown below.
+
+![](https://www.tmwr.org/figures/two-candidates-1.png)
+
+
+![](https://www.tmwr.org/figures/expected-improvement-1.png)
+
+### `tune_bayes()`
+
+
+To implement iterative search via Bayesian optimization, use the `tune_bayes()` function. It has syntax that is very similar to `tune_grid()` but with several additional arguments: 
+
+* `iter` is the maximum number of search iterations. 
+
+* `initial` can be either an integer, an object produced using `tune_grid()`, or one of the racing functions. Using an integer specifies the size of a space-filling design that is sampled prior to the first GP model. 
+
+* `objective` is an argument for which acquisition function should be used. The `tune` package contains functions to pass here, such as `exp_improve()` or `conf_bound()`. 
+
+* The `param_info` argument, in this case, specifies the range of the parameters as well as any transformations that are used. These are used to define the search space. In situations where the default parameter objects are insufficient, `param_info` is used to override the defaults. 
+
+The `control` argument now uses the results of `control_bayes()`. Some helpful arguments there are: 
+
+* `no_improve` is an integer that will stop the search if improved parameters are not discovered within `no_improve` iterations. 
+
+* `uncertain` is also an integer (or `Inf`) that will take an _uncertainty sample_ if there is no improvement within `uncertain` iterations. This will select the next candidate that has large variation. It has the effect of pure exploration since it does not consider the mean prediction. 
+
+* `verbose` is a logical that will print logging information as the search proceeds. 
+
+
+```{r}
+svm_rec <- 
+  recipe(class ~ ., data = cells) %>%
+  step_YeoJohnson(all_numeric_predictors()) %>%
+  step_normalize(all_numeric_predictors())
+
+svm_spec <- 
+  svm_rbf(cost = tune(), rbf_sigma = tune()) %>% 
+  set_engine("kernlab") %>% 
+  set_mode("classification")
+
+svm_wflow <- 
+  workflow() %>% 
+  add_model(svm_spec) %>% 
+  add_recipe(svm_rec)
+
+svm_param <- 
+  svm_wflow %>% 
+  extract_parameter_set_dials() %>% 
+  update(rbf_sigma = rbf_sigma(c(-7, -1)))
+
+start_grid <- 
+  svm_param %>% 
+  update(
+    cost = cost(c(-6, 1)),
+    rbf_sigma = rbf_sigma(c(-6, -4))
+  ) %>% 
+  grid_regular(levels = 2)
+
+set.seed(1402)
+svm_initial <- 
+  svm_wflow %>% 
+  tune_grid(resamples = cell_folds, grid = start_grid, metrics = roc_res)
+
+ctrl <- control_bayes(verbose = TRUE)
+
+set.seed(1403)
+svm_bo <-
+  svm_wflow %>%
+  tune_bayes(
+    resamples = cell_folds,
+    metrics = roc_res,
+    initial = svm_initial,
+    param_info = svm_param,
+    iter = 25,
+    control = ctrl
+  )
+```
+
+
+```{r}
+show_best(svm_bo)
+
+autoplot(svm_bo, type = "performance")
+```
+
+
+
+
+<video width="720" height="720" controls>
+<source src="https://www.tmwr.org/bo_search.mp4" type="video/mp4">
+</video>
+
+## Simulated Annealing
+
+Simulated annealing is a general nonlinear search routine inspired by the process in which metal cools. It is a global search method that can effectively navigate many different types of search landscapes, including discontinuous functions. Unlike most gradient-based optimization routines, simulated annealing can reassess previous solutions.
+
+The process starts with an initial value and embarks on a controlled random walk through the parameter space. Each new candidate parameter value is a small perturbation of the previous value that keeps the new point within a local neighborhood.
+
+The candidate point is resampled to obtain its corresponding performance value. If this achieves better results than the previous parameters, it is accepted as the new best and the process continues. If the results are worse than the previous value the search procedure may still use this parameter to define further steps. This depends on two factors. First, the likelihood of accepting a bad result decreases as performance becomes worse. In other words, a slightly worse result has a better chance of acceptance than one with a large drop in performance. The other factor is the number of search iterations. Simulated annealing wants to accept fewer suboptimal values as the search proceeds. 
+
+The main important detail is to define how to perturb the tuning parameters from iteration to iteration. There are a variety of methods in the literature for this. For continuous tuning parameters, we define a small radius to specify the local “neighborhood”. For example, suppose there are two tuning parameters and each is bounded by zero and one. The simulated annealing process generates random values on the surrounding radius and randomly chooses one to be the current candidate value.
+
+![](https://www.tmwr.org/figures/iterative-neighborhood-1.png)
+
+
+<video width="720" height="720" controls>
+  <source src="https://www.tmwr.org/sa_search.mp4" type="video/mp4">
+</video>
+
+
+
+

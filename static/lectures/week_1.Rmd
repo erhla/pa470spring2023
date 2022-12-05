@@ -1,0 +1,65 @@
+---
+title: "Week 1"
+subtitle: "PA 470 Spring 2022"
+author: "Eric Langowski"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Welcome and Schedule
+
+### 6:30pm Introductions
+
+- Preferred Name & Pronouns
+- Recent book or something you learned
+
+### 7:00pm Course Introduction
+
+### 7:45pm Break + Debugging (15 minutes)
+
+### 8:00pm Coding Review
+
+## Course Introduction
+
+### Syllabus
+
+### [Course Website](https://pa470spring2022.netlify.app/)
+
+### Tech 'Stack'
+
+R/RStudio + GitHub/GitHub Desktop
+
+## Course Motivation
+
+What should the relationship between the public sector and ML/AI be? Think of a few words and put them in the chat. 
+
+## Optional Readings {.build}
+
+- [Ask Delphi](https://delphi.allenai.org/?a1=Women+are+better+than+men.)
+- [Crime Prediction Software Promised to Be Free of Biases. New Data Shows It Perpetuates Them](https://themarkup.org/prediction-bias/2021/12/02/crime-prediction-software-promised-to-be-free-of-biases-new-data-shows-it-perpetuates-them)
+- [Crime Prediction Keeps Society Stuck in the Past](https://www.wired.com/story/crime-prediction-racist-history/)
+
+- ![](https://mrkp-static-production.themarkup.org/graphics/2021-predpol_graphics-2021-predpol__national-map/1638323971066/assets/predpol_national_map-01.svg){width=50%}
+
+## A framework
+
+<div class='columns-2'>
+![](https://inteng-storage.s3.amazonaws.com/img/iea/bjOLnW046e/uspus2.jpeg){width=75%}
+![](https://1000logos.net/wp-content/uploads/2021/04/UPS-logo.png){width=75%}
+</div>
+
+## Coding Philosophy
+
+- Reproducibility ** 2
+- Iterative
+- tidy
+  - "the bottleneck in most data analysis is thinking time, not computing time." ~tidyverse manifesto
+  
+## Break
+
+## Coding Review/EDA
+
+

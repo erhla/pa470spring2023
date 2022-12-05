@@ -1,0 +1,128 @@
+---
+title: "Week 6"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    theme: sandstone
+    number_sections: true
+---
+
+```{r initial_setup, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(lubridate)
+library(kableExtra)
+library(scales)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      eval= TRUE)
+
+theme_set(theme_bw())
+```
+
+# What is prediction?
+
+Causal inference focuses on extracting treatment effects with a high degree of confidence, focusing on answering why. Prediction, in contrast, answers questions about who, what, when, and where—anticipating what will happen.
+
+"Given what the model has seen before and if we assume the new data follows the same paradigm, what will the outcomes be in this new dataset"
+
+# Bias-Variance Trade-off
+
+- Accuracy: how close are you to prediction a value
+- Error: how far are you from the value
+
+$Error = Reducible + Irreducible$
+
+$Error = (Bias + Variance) + Irreducible$
+
+- Irreducible error: natural uncertainty/sampling error
+- Reducible error: bias + variance
+
+- Bias: difference between model and theoretical true model (e.g. error due to erroneous assumptions)
+- Variance: model learns random, irrelevant patters in data (e.g. model predictions change/vary widely when trained)
+
+## The Trade-off
+
+Underfit: large bias and misses variability (e.g. straight line on quadratic process)
+Overfit: high variance (e.g. focus on the noise and therefore fails out of sample)
+
+Figure 9.7
+
+# Objective/Loss functions
+
+Table 9.3
+
+# Cross Validation
+
+Resampling example from tidymodels: https://www.tidymodels.org/start/resampling/
+
+```{r}
+data(cells, package = "modeldata")
+
+cell_split <- initial_split(cells %>% select(-case), 
+                            strata = class)
+cell_train <- training(cell_split)
+cell_test  <- testing(cell_split)
+
+cell_train %>% 
+  count(class) %>% 
+  mutate(prop = n/sum(n))
+
+rf_mod <- 
+  rand_forest(trees = 1000) %>% 
+  set_engine("ranger") %>% 
+  set_mode("classification")
+
+rf_fit <- 
+  rf_mod %>% 
+  fit(class ~ ., data = cell_train)
+rf_fit
+
+rf_training_pred <- 
+  rf_fit %>% augment(cell_train)
+
+rf_training_pred %>%                
+  roc_auc(truth = class, .pred_PS)
+
+rf_training_pred %>%                
+  accuracy(truth = class, .pred_class)
+
+rf_testing_pred <- 
+  rf_fit %>% augment(cell_test)
+
+rf_testing_pred %>%                   
+  roc_auc(truth = class, .pred_PS)
+
+rf_testing_pred %>%                  
+  accuracy(truth = class, .pred_class)
+```
+
+
+```{r}
+folds <- rsample::vfold_cv(cell_train, v = 10)
+
+rf_wf <- 
+  workflow() %>%
+  add_model(rf_mod) %>%
+  add_formula(class ~ .)
+
+rf_fit_rs <- 
+  rf_wf %>% 
+  fit_resamples(folds)
+
+collect_metrics(rf_fit_rs, summarize=FALSE)
+
+collect_metrics(rf_fit_rs, summarize=TRUE)
+
+rf_testing_pred %>%                   
+  roc_auc(truth = class, .pred_PS)
+
+rf_testing_pred %>%                   
+  accuracy(truth = class, .pred_class)
+
+```
+
+
+
+

@@ -1,0 +1,294 @@
+---
+title: "Coding Warmup 2"
+date: 2022-01-27T00:00:00-00:00
+categories: ["R"]
+tags: ["warmup"]
+publishdate: 2022-01-01T00:00:00-00:00
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,
+                      include = TRUE,
+                      message = FALSE,
+                      eval = TRUE)
+```
+
+This assignment is ungraded. I encourage you to review the problems to see if (1) you know how to do them or (2) if you know how to google how to do it. If either path forward escapes you, I suggest that you complete this assignment.
+
+# Part 0
+
+GitHub (and GitHub Classroom) tutorial. Accept the invitation [here](https://classroom.github.com/a/oLQ628lN).
+
+
+# Part 1
+
+Create an RMarkdown file to use for this assignment. Use html as the output and change at least one option in the yaml. Complete the rest of the assignment using markdown and chunks to create readable code and output.
+
+# Part 2
+
+Using [censusreporter.org](censusreporter.org), pick an American Community Survey variable and a geographic area and division (e.g. nationwide and states, statewide and county, county and tracts).
+
+Using `tigris`, `tidycensus`, and `leaflet` (encouraged, or your favorite R package for maps), map the variable over your chosen geographic divisions. Select an appropriate pallete, and consider adding popup labels. Write a few sentences describing your map in Markdown.
+
+```{r}
+library(tidyverse)
+library(tidycensus)
+library(tigris)
+library(sf)
+library(scales)
+library(leaflet)
+
+il19 <- get_acs(geography = "tract", 
+              variables = c(medincome = "B19013_001",
+                            totalpop = "B02001_001",
+                            white_alone = "B02001_002",
+                            black_alone = "B02001_003",
+                            asian_alone = "B02001_004"),
+              state = "IL", 
+              year = 2019,
+              output='wide')
+
+il19 <- il19 %>% mutate(
+  pct_white = white_aloneE / totalpopE,
+  pct_black = black_aloneE / totalpopE,
+  pct_asian = asian_aloneE / totalpopE
+)
+
+iltracts <- tigris::tracts(state='17', year=2019, cb=TRUE)
+
+joined <- iltracts %>% left_join(
+  il19 %>% select(GEOID, pct_white, totalpopE, medincomeE)
+) %>% filter(COUNTYFP == '031') #cook
+
+### make labels
+
+label_str <- str_glue("<strong>Tract %s</strong><br>White Alone (Pct): %s<br/>")
+labels <- sprintf(label_str,
+                joined$NAME,
+                percent(joined$pct_white, accuracy = .1)) %>% 
+  lapply(htmltools::HTML)
+
+### make palette
+
+pal1 <-
+  colorNumeric(
+    palette = "Oranges",
+    domain = joined$pct_white,
+    na.color = "Grey"
+  )
+
+  
+m <- leaflet() %>%
+  addTiles() %>% addPolygons(
+    data = joined,
+    fillColor = ~ pal1(pct_white),
+    weight = 0.5,
+    opacity = 0.5,
+    color = "white",
+    dashArray = 3,
+    fillOpacity = 0.7,
+    highlight = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE
+    ),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto"
+    )
+  ) %>%
+  addLegend(
+    pal = pal1,
+    values = joined$pct_white,
+    opacity = 0.7,
+    title = NULL,
+    position = "bottomright"
+  )
+  
+
+m
+
+
+```
+
+
+
+# Part 3
+
+Grab another variable for the same geographic area and divisions with the intent of exploring correlation between this variable and the one selected in the previous section. Replicate some of the analysis from [Tidy Modeling Sec 3.1](https://www.tmwr.org/base-r.html#an-example).
+
+```{r}
+ggplot(joined, aes(x=pct_white, y=medincomeE)) +
+  geom_point(alpha=.2) +
+  geom_smooth() +
+  theme_bw() +
+  scale_y_continuous(labels=dollar_format()) +
+  scale_x_continuous(labels = percent_format()) +
+  labs(x='Percent White', y='Median Income', title='Income and Percent White (alone)\nby Tract in Cook County')
+```
+
+
+```{r results='asis'}
+m1 <- lm(medincomeE ~ pct_white + totalpopE, data=joined)
+
+stargazer::stargazer(m1, type='html')
+```
+
+# Part 4
+
+Complete Exercise 12.3.3. Use [this file](https://github.com/DataScienceForPublicPolicy/build-simulation-data/blob/master/notebooks/raster-simulation.Rmd) to simulate the data.
+```{r}
+
+library(raster)
+library(data.table)
+library(tidyverse)
+
+# Number of rows
+nx = 50
+ny = 50
+# Set seed for reproducibility
+set.seed(123)
+
+#Generate data
+#Create combination of all x and y values
+# Create a random normal distribution
+r1 = expand.grid(
+  x = 1:nx,
+  y = 1:ny
+) %T>%
+setDT() %>%
+.[,val := rnorm(n = nx*ny, mean = x + y, sd = sqrt(ny))] %>%
+rasterFromXYZ()
+
+r2 = expand.grid(
+  x = 1:nx,
+  y = 1:ny
+) %T>%
+setDT() %>%
+.[,val := rnorm(n = nx*ny, mean = (-0.5) * x + 2 * y, sd = sqrt(ny))] %>%
+rasterFromXYZ()
+
+r3 = expand.grid(
+  x = 1:nx,
+  y = 1:ny
+) %T>%
+setDT() %>%
+.[,val := rnorm(n = nx*ny, mean = (1) * x - 1.25 * y, sd = sqrt(ny))] %>%
+rasterFromXYZ()
+
+pop_r = expand.grid(
+  x = 1:nx,
+  y = 1:ny
+) %T>%
+setDT() %>%
+.[,val := runif(n = nx*ny, min = 1, max = 100)] %>%
+rasterFromXYZ()
+
+```
+
+
+For each, we standardize the values.
+```{r}
+# Force to same range: 1 to 100
+r1 = r1 - cellStats(r1, min) + 1
+r1 = 100 * r1 / cellStats(r1, max)
+r2 = r2 - cellStats(r2, min) + 1
+r2 = 100 * r2 / cellStats(r2, max)
+r3 = r3 - cellStats(r3, min) + 1
+r3 = 100 * r3 / cellStats(r3, max)
+
+p1 = ggplot(data = as.data.frame(r1, xy = T)) +
+  geom_raster(aes(x, y, fill = val)) +
+  scale_fill_viridis_c("", option = "magma") +
+  guides(fill = guide_colourbar(barwidth = 1, barheight = 15)) +
+  coord_equal() +
+  theme_void() +
+  ggtitle("r1") + 
+  theme(legend.position = "none", plot.title =  element_text(size=10, hjust = 0.5))
+
+p2 = ggplot(data = as.data.frame(r2, xy = T)) +
+  geom_raster(aes(x, y, fill = val)) +
+  scale_fill_viridis_c("", option = "magma") +
+  guides(fill = guide_colourbar(barwidth = 1, barheight = 15)) +
+  coord_equal() +
+  theme_void() +
+  ggtitle("r2") + 
+theme(legend.position = "none", plot.title =  element_text(size=10, hjust = 0.5))
+
+p3 = ggplot(data = as.data.frame(r3, xy = T)) +
+  geom_raster(aes(x, y, fill = val)) +
+  scale_fill_viridis_c("", option = "magma") +
+  guides(fill = guide_colourbar(barwidth = 1, barheight = 15)) +
+  coord_equal() +
+  theme_void() + 
+  ggtitle("r3") 
+p3 = p3 + theme(legend.position = "none", plot.title =  element_text(size=10, hjust = 0.5))
+
+gridExtra::grid.arrange(p1, p2, p3, ncol = 3)
+
+stack(r1, r2, r3) %>% mean()
+
+(r1+r2+r3) / 3
+
+
+r_mean <- stack(r1, r2, r3) %>% mean()
+
+p4 = ggplot(data = as.data.frame(r_mean, xy = T)) +
+  geom_raster(aes(x, y, fill = layer)) +
+  scale_fill_viridis_c("", option = "magma") +
+  guides(fill = guide_colourbar(barwidth = 1, barheight = 15)) +
+  coord_equal() +
+  theme_void() + 
+  ggtitle("r4") 
+p4 = p4 + theme(legend.position = "none", plot.title =  element_text(size=10, hjust = 0.5))
+
+p4
+
+```
+
+# Part 5
+
+Consider expanding the divvy example from class with the following:
+
+- approximate trip distance from start/end location
+- show some summary stats by hour or day of week or community area or "rideable" type
+- construct a regression with some combination of the above
+```{r}
+temp <- tempfile()
+download.file("https://divvy-tripdata.s3.amazonaws.com/202107-divvy-tripdata.zip", 
+              temp)
+unzip(temp, list=TRUE)
+divvy <- read_csv(unz(temp, "202107-divvy-tripdata.csv"))
+unlink(temp)
+```
+
+
+```{r}
+divvy <- 
+  divvy %>% st_as_sf(coords=c("start_lng", "start_lat"), remove=FALSE)
+
+st_crs(divvy) <- 4326
+
+divvy %>% slice_sample(n=100) %>%
+  st_distance()
+
+dist1 <- divvy %>% as.data.frame() %>%
+  filter(!is.na(start_lng)) %>%
+  rowwise() %>%
+  mutate(distance = geosphere::distHaversine(c(start_lng, start_lat), 
+                                             c(end_lng, end_lat)))
+
+ggplot(dist1 %>% filter(distance/1609 <= 7.5), aes(x=distance/1609)) +
+  geom_histogram() +
+  labs(x='Crow Distance (miles)',
+       y='Rides',
+       title='Divvy Distances July 2021 (Crow)')
+
+```
+
+
+

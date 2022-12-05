@@ -1,0 +1,94 @@
+---
+title: "Coding Warmup 4"
+date: 2022-02-10T00:00:00-00:00
+categories: ["R"]
+tags: ["warmup"]
+publishdate: 2022-01-01T00:00:00-00:00
+---
+
+<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
+
+
+<p>Make a classification model and run evaluations.</p>
+<div id="part-a" class="section level2">
+<h2>Part A</h2>
+<p>We are going to use a toy dataset called bivariate. There is a training, testing, and validation dataset provided.</p>
+<pre class="r"><code>library(tidyverse)
+## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+## v ggplot2 3.3.5     v purrr   0.3.4
+## v tibble  3.1.6     v dplyr   1.0.7
+## v tidyr   1.1.4     v stringr 1.4.0
+## v readr   2.1.1     v forcats 0.5.1
+## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
+## x dplyr::filter() masks stats::filter()
+## x dplyr::lag()    masks stats::lag()
+library(tidymodels)
+## Registered S3 method overwritten by &#39;tune&#39;:
+##   method                   from   
+##   required_pkgs.model_spec parsnip
+## -- Attaching packages -------------------------------------- tidymodels 0.1.4 --
+## v broom        0.7.11     v rsample      0.1.1 
+## v dials        0.0.10     v tune         0.1.6 
+## v infer        1.0.0      v workflows    0.2.4 
+## v modeldata    0.1.1      v workflowsets 0.1.0 
+## v parsnip      0.1.7      v yardstick    0.0.9 
+## v recipes      0.1.17
+## -- Conflicts ----------------------------------------- tidymodels_conflicts() --
+## x scales::discard() masks purrr::discard()
+## x dplyr::filter()   masks stats::filter()
+## x recipes::fixed()  masks stringr::fixed()
+## x dplyr::lag()      masks stats::lag()
+## x yardstick::spec() masks readr::spec()
+## x recipes::step()   masks stats::step()
+## * Search for functions across packages at https://www.tidymodels.org/find/
+theme_set(theme_bw())
+
+data(bivariate)
+
+ggplot(bivariate_train, aes(x=A, y=B, color=Class)) +
+  geom_point(alpha=.3)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
+<p>Use <code>logistic_reg</code> and <code>glm</code> to make a classification model of Class ~ A * B. Then use tidy and glance to see some summary information on our model. Anything stand out to you?</p>
+</div>
+<div id="part-b" class="section level2">
+<h2>Part B</h2>
+<p>Use augment to get predictions. Look at the predictions.</p>
+</div>
+<div id="part-c" class="section level2">
+<h2>Part C</h2>
+<p>Visually inspect the predictions using the code below</p>
+<pre><code># log_model, your parnsip model
+# bivariate_train / bivariate_val, data from bivariate
+
+# to plot the countour we need to create a grid of points and get the model prediction at each point
+x_grid &lt;-
+  expand.grid(A = seq(min(bivariate_train$A), max(bivariate_train$A), length.out = 100),
+              B = seq(min(bivariate_train$B), max(bivariate_train$B), length.out = 100))
+x_grid_preds &lt;- log_model %&gt;% augment(x_grid)
+
+# plot predictions from grid as countour and validation data on plot
+ggplot(x_grid_preds, aes(x = A, y = B)) + 
+  geom_contour(aes(z = .pred_One), breaks = .5, col = &quot;black&quot;) + 
+  geom_point(data = bivariate_val, aes(col = Class), alpha = 0.3)</code></pre>
+</div>
+<div id="part-d" class="section level2">
+<h2>Part D</h2>
+<p>Evaluate your model using the following functions (which dataset(s) should you use to do this train, test, or validation). See if you can provide a basic interpretation of the measures.</p>
+<ul>
+<li>roc_auc</li>
+<li>accuracy</li>
+<li>roc_curve and autoplot</li>
+<li>f_meas</li>
+</ul>
+</div>
+<div id="part-e" class="section level2">
+<h2>Part E</h2>
+<p>Recall Table 8.4 from the textbook. If necessary, class one can be positive and class two can be negative. Using the output from conf_mat, visually verify you know how to calculate the following:</p>
+<ul>
+<li>True Positive Rate (TPR), Sensitivity, or Recall</li>
+<li>True Negative Rate (TNR) or Specificity</li>
+<li>False Positive Rate, Type I error</li>
+<li>False Negative Rate (FNR), Type II error</li>
+<li>Positive Predictive Value (PPV) or Precision</li>
+</ul>
+</div>

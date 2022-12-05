@@ -1,0 +1,106 @@
+---
+title: "Week 7"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    theme: sandstone
+    number_sections: true
+---
+
+```{r initial_setup, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(lubridate)
+library(kableExtra)
+library(scales)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      eval= TRUE)
+
+theme_set(theme_bw())
+```
+
+## Figure 10.1
+
+![](https://raw.githubusercontent.com/erhla/pa470spring2022/59ae1b646a998b74dcc60a1b59c6e7e5c4824da9/static/lectures/10.1.jpg)
+
+An overview of various ML algorithms in linear/non-linear/and discontinuous parameter spaces.
+
+Note that the textbook uses `caret`, while this is a useful pacakge we will continue to use `tidymodels`. Be sure to review the discussion of cross validation and hyperparameter tuning in the textbook.
+
+# KNN
+
+1. Calculate distance 
+2. Vote (either proportions to probabilities or majority voting to classification)
+
+Notes:
+
+- Key to standardize units for calculating distances
+- Can create categorical bins with distance of '1' between bins (such as 18-24, 25-29, etc)
+- Tuning is very important. Should you look at the 5 closest points or 50? 
+
+Takeaway:
+
+"In practice, k-NNs are best suited when datasets are smaller and contain fewer variables. They are also well suited when data is recorded along a grid (e.g., spatial, sound, imagery) and there is a lack of a theory of that guides how the inputs relate to the target or prediction."
+
+Recall unsupervised K-means clustering example from week 3. What is different in this case? (In this supervised example, we have labeled data and are trying to make class predictions based on input characteristics.)
+
+Figure 10.5
+
+# Simple Trees/CART
+
+Figure 10.6
+
+Recall our previous discussion on decision trees.
+
+Decision Trees are a recursive algorithm where samples are continuously evaluated to be 'split' until stopping conditions are reached.
+
+1. Base Case: check if all values are too similar (or identical), if so terminate and you are at a leaf
+2. Recursive Partitioning: if not at a base case, split into two children/nodes to maximize information gain/reduce impurity 
+3. Stopping Criteria/Pruning: nodes should not become too small, if they are stop
+
+Note: likely to overfit the data, limitations on out of sample predictions (e.g. an outlier value which exceeds the highest value seen in your training data)
+
+# Random Forests
+
+- bagging/bootstrapping: aggregating predictions from multiple models
+- random subspace method: select a random subset of variables at each node of each tree
+
+Goal is to force trees to be uncorrelated.
+
+## Key parameters
+
+Variable Subsampling: fixed number of variables to use.
+Minimum Node Size: size of leaf nodes in each tree
+
+The number of trees in the forest can also be tuned but this impacts 'the stability of consensus rather than accuracy'
+
+# Cross Validation/Hyperparameter Optimization
+
+Model Evaluation, Model Selection, and Algorithm Selection in Machine Learning
+
+How do we select models and 'tune' hyperparameters?
+
+Before we have talked about using testing and training datasets. This is a 'two-way' split of the data. For hyperparameter tuning, we can use a 'three-way' split into training, testing, and validation.
+
+## Three goals of Performance Estimation
+
+1. We want to estimate the generalization accuracy, the predictive performance of a model on future (unseen) data.
+2. We want to increase the predictive performance by tweaking the learning algorithm and selecting the best-performing model from a given hypothesis space.
+3. We want to identify the machine learning algorithm that is best-suited for the problem at hand; thus, we want to compare different algorithms, selecting the best-performing one as well as the best-performing model from the algorithm’s hypothesis space.
+
+
+Figure 12.
+
+k-fold cross validation.
+
+Figure 13.
+
+
+# 10.4.4
+
+
+
+
+

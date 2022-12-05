@@ -1,0 +1,32 @@
+---
+title: "Reading Response 2"
+date: 2022-02-17T00:00:00-00:00
+categories: ["R"]
+tags: ["response"]
+publishdate: 2022-01-01T00:00:00-00:00
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,
+                      include = FALSE)
+```
+
+## Prompt
+
+Explore the existing relationship between people, data, and government. 
+How is this relationship perpetuated into ML/AI government applications? 
+Identify areas where applications might be less or more problematic.
+
+## Assignment
+
+These responses are primarily for you to gather your thoughts before class, and you should spend about an hour on each after completing that week’s readings. 
+The form should be whatever you find most useful (diagrams, blog post, two-page case study, thought piece, your own idea). 
+Use primary sources or lived experiences when appropriate, including but not limited to course readings. 
+
+## Grading
+
+50% - completes prompt with approximate effort of one hour
+
+40% - engages with primary sources or lived experiences
+
+10% - appropriate submission (2 responses must be shared with the class, all should be submitted on Blackboard)

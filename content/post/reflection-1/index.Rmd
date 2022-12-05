@@ -1,0 +1,37 @@
+---
+title: "Reading Response 1"
+date: 2022-02-03T00:00:00-00:00
+categories: ["R"]
+tags: ["response"]
+publishdate: 2022-01-01T00:00:00-00:00
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,
+                      include = FALSE)
+```
+
+## Prompt
+
+Find and analyze a case study of AI/ML in the public sector. 
+What is this application designed to do? 
+What data is required to accomplish that purpose? 
+Does that data exist?
+
+## Assignment
+
+These responses are primarily for you to gather your thoughts before class, and you should spend about an hour on each after completing that week’s readings. 
+The form should be whatever you find most useful (diagrams, blog post, two-page case study, thought piece, your own idea). 
+Use primary sources or lived experiences when appropriate, including but not limited to course readings. 
+
+## Submission
+
+Submit on Blackboard before class. Since we will be meeting online this week, I'll send everyone into breakout rooms and each group will share back with the class. This will count towards sharing one response with the class for everyone who participates.
+
+## Grading
+
+50% - completes prompt with approximate effort of one hour
+
+40% - engages with primary sources or lived experiences
+
+10% - appropriate submission (2 responses must be shared with the class, all should be submitted on Blackboard)

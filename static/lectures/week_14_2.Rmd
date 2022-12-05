@@ -1,0 +1,279 @@
+---
+title: "Week 14"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    theme: sandstone
+---
+
+```{r initial_setup, include=FALSE}
+
+knitr::opts_chunk$set(warning = FALSE)
+
+library(tidymodels)
+library(tidyverse)
+library(tidytext)
+library(textrecipes)
+library(tokenizers)
+library(janeaustenr)
+library(stopwords)
+library(SnowballC)
+library(widyr)
+library(LiblineaR)
+#devtools::install_github("EmilHvitfeldt/scotus")
+
+```
+
+# Sentiment
+
+Sentiment analysis attempts to assign scores or moods to text. Recall Figure 13.3 from the textbook.
+
+
+## 13.2.3 DIY
+
+*From Chapter 13*
+ 
+
+In this DIY, we turn to a Wikipedia entry about the 1979 Oil Crisis that had a substantial effect on the Western World's economy.^[The Wikipedia article on the Oil Crisis can be found at https://en.wikipedia.org/wiki/1979_oil_crisis]. The article on the Oil Crisis presents both positive and negative effects -- a perfect example of how sentiment analysis can summarize a body of text. The first paragraph describes the magnitude of the crisis: 
+
+> The 1970s energy crisis occurred when the Western world, particularly the United States, Canada, Western Europe, Australia, and New Zealand, faced substantial petroleum shortages, real and perceived, as well as elevated prices. The two worst crises of this period were the 1973 oil crisis and the 1979 energy crisis, when the Yom Kippur War and the Iranian Revolution triggered interruptions in Middle Eastern oil exports.
+
+Whereas the sixth paragraph softens the implications, turning to instances where the crisis had a far less adverse impact:
+
+>The period was not uniformly negative for all economies. Petroleum-rich countries in the Middle East benefited from increased prices and the slowing production in other areas of the world. Some other countries, such as Norway, Mexico, and Venezuela, benefited as well. In the United States, Texas and Alaska, as well as some other oil-producing areas, experienced major economic booms due to soaring oil prices even as most of the rest of the nation struggled with the stagnant economy. Many of these economic gains, however, came to a halt as prices stabilized and dropped in the 1980s.
+
+Our objective with this DIY is to show how sentiment evolves over the first six paragraphs as scored by the Bing Lexicon implemented in the `tidytext` package. To start, we read the raw text from the `wiki-article.txt` file. 
+
+```{r, warning=FALSE, message = FALSE, error=FALSE}
+
+#Read text article
+  wiki_article <- readLines("https://raw.githubusercontent.com/DataScienceForPublicPolicy/diys/main/data/wiki-article.txt")
+```
+
+To make use of the text, we tokenize the six paragraphs of text, remove stop words, then apply a left join with the Bing lexicon. The resulting table contains both matching and non-matching terms and aggregates term frequencies by paragraph `para`, `word`, and `sentiment`. In total, $n = 18$ words are labeled negative and $n=11$ words are positive.
+
+```{r, warning=FALSE, message = FALSE, error=FALSE}
+#Set up in data frame
+  wiki_df <- data.frame(para = 1:length(wiki_article),
+                        text = wiki_article, 
+                        stringsAsFactors = FALSE)
+
+#Join tokens to lexicon
+  sent_df <- wiki_df %>%
+    unnest_tokens(word, text) %>% 
+    anti_join(get_stopwords(language = "en")) %>%
+    left_join(get_sentiments("bing")) %>%
+    count(para, word, sentiment, sort = TRUE)
+  
+#Label terms without sentiment
+  sent_df$sentiment[is.na(sent_df$sentiment)] <- "none"
+```
+
+Next, we write a basic function to calculate various sentiment metrics such as polarity and expressiveness. Packages such as `sentimentr` implement scoring, but as rules-based sentiment analysis is fairly simple, we directly implement metrics in the formula to illustrate their accessibility. 
+
+```{r}
+  sentMetrics <- function(n, s){
+
+    #Set input metrics
+      N <- sum(n, na.rm = T)
+      x_p <- sum(n[s =="positive"], na.rm = T)
+      x_n <- sum(n[s =="negative"], na.rm = T)
+      
+    #Calculate scores
+      return(data.frame(count.positive = x_p,
+                        count.negative = x_n,
+                        net.sentiment = (x_p - x_n) / N,
+                        expressiveness = (x_p + x_n) / N,
+                        positivity = x_p / N,
+                        negativity = x_n / N,
+                        polarity = (x_p - x_n) / (x_p + x_n))
+      )
+  
+  }
+```
+
+The function is designed to work on one document at a time, requiring a loop to score each paragraph in the article. We iterate over each paragraph using `lapply`, returning the results in a data frame `rated`.
+
+```{r, warning=FALSE, message = FALSE, error=FALSE}
+#Apply sentiment scores to each paragraph
+  rated <- lapply(sort(unique(sent_df$para)), function(p){
+                    para_df <- sent_df %>% filter(para == p)
+                    output <- sentMetrics(n = para_df$n, 
+                                          s = para_df$sentiment)
+                    return(data.frame(para = p, 
+                                      output))
+                  })
+
+#Bind into a data frame
+  rated <- do.call(rbind, rated)
+  
+```
+
+Let's examine the results by plotting sentiment by paragraph in Figure \@ref(fig:sentoil). In the first line graph (plot (A)), we see that the first four paragraphs are net negative, then turn net positive in the last two paragraphs. Notice that both polarity and net sentiment tell the same story, but the magnitudes of their values are quite different. In fact, the Pearson's correlation is $\rho = 0.964$. When we dive deeper into the positivity and negativity, we see that the switch in tone is widespread -- earlier paragraphs have mostly negative terms while the tone softens in later paragraphs that describe less dire conditions in the world economy. 
+
+
+```{r, sentoil, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE, fig.cap = "Sentiment scores for the first six paragraphs of the Wikipedia article on 1979 Oil Crisis. Graph (A) illustrates net sentiment and polarity. Graph (B) plots positivity and negativity.", fig.height = 3 }
+pacman::p_load(ggplot2, gridExtra)
+
+plot1 <- ggplot(rated, aes(x = para, y = polarity)) +
+          geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey") + 
+          geom_line(colour = "blue", width = 2)  + 
+          geom_point(colour = "blue", width = 2)  + 
+          geom_line(aes(x = para, y = net.sentiment), colour = "orange", width = 2) + 
+          geom_point(aes(x = para, y = net.sentiment), colour = "orange", width = 2) + 
+          ylab("Polarity (blue), Net Sentiment (orange)") + 
+          xlab("Paragraph Number") + 
+          ggtitle("(A) Polarity and Net Sentiment by Paragraph") + 
+          theme_bw() + 
+          theme(plot.title = element_text(size = 10),
+                axis.title.x = element_text(size = 10),
+                axis.title.y = element_text(size = 10)) 
+          
+plot2 <- ggplot(rated, aes(x = para, y = positivity)) +
+          geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey") + 
+          geom_point(colour = "green") + 
+          geom_line(colour = "green", width = 2)  + 
+          geom_point(aes(y = negativity), colour = "red") + 
+          geom_line(aes(y = negativity), colour = "red", width = 2)  + 
+          ylab("Negativity (red), Positivity (blue)") + 
+          xlab("Paragraph Number") + 
+          ggtitle("(B) Negativity and Positivity by Paragraph") + 
+          theme_bw() + 
+          theme(plot.title = element_text(size = 10),
+                axis.title.x = element_text(size = 10),
+                axis.title.y = element_text(size = 10)) 
+
+grid.arrange(plot1, plot2, ncol = 2)
+``` 
+
+
+# Regression Example
+
+```{r}
+library(scotus)
+
+scotus_filtered %>%
+  slice_sample(n=5) %>%
+  as_tibble()
+
+scotus_filtered %>%
+  mutate(year = as.numeric(year),
+         year = 10 * (year %/% 10)) %>%
+  count(year) %>%
+  ggplot(aes(year, n)) +
+  geom_col() +
+  labs(x = "Year", y = "Number of opinions per decade")
+```
+
+
+```{r}
+scotus_split <- scotus_filtered %>%
+  mutate(year = as.numeric(year),
+         text = str_remove_all(text, "'")) %>%
+  slice_sample(n=100) %>%
+  initial_split()
+
+scotus_train <- training(scotus_split)
+scotus_test <- testing(scotus_split)
+```
+
+
+- First, we must specify in our initial `recipe()` statement the form of our model (with the formula `year ~ text`, meaning we will predict the year of each opinion from the text of that opinion) and what our training data is.
+
+- Then, we tokenize the text of the court opinions. 
+
+- Next, we filter to only keep the top 1000 tokens by term frequency. We filter out those less frequent words because we expect them to be too rare to be reliable, at least for our first attempt. (We are _not_ removing stop words yet; we'll explore removing them in Section.)
+
+- The recipe step `step_tfidf()`, used with defaults here, weights each token frequency by the inverse document frequency.\index{tf-idf}
+
+- As a last step, we normalize (center and scale) these tf-idf values. This centering and scaling is needed because we're going to use a support vector machine model.
+
+
+```{r}
+final_rec <- recipe(year ~ text, data = scotus_train) %>%
+  step_tokenize(text) %>%
+  step_tokenfilter(text, max_tokens = 1e3) %>%
+  step_tfidf(text) %>%
+  step_normalize(all_predictors())
+```
+
+
+
+
+```{r}
+svm_spec <- svm_linear() %>%
+  set_mode("regression") %>%
+  set_engine("LiblineaR")
+
+final_workflow <- workflow() %>%
+  add_recipe(final_rec) %>%
+  add_model(svm_spec)
+
+scotus_folds <- vfold_cv(scotus_train, v = 5)
+
+final_rs <- fit_resamples(
+  final_workflow,
+  scotus_folds,
+  metrics = metric_set(rmse, mae, mape),
+  control = control_resamples(save_pred = TRUE, verbose=TRUE)
+)
+```
+
+
+```{r}
+final_rs %>%
+  collect_metrics() %>%
+  ggplot(aes( x=.metric, y=mean)) +
+  geom_bar(stat='identity') 
+
+
+final_fitted <- last_fit(final_workflow, scotus_split)
+
+collect_metrics(final_fitted)
+
+scotus_fit <- extract_fit_parsnip(final_fitted$.workflow[[1]])
+
+scotus_fit %>%
+  tidy() %>%
+  filter(term != "Bias") %>%
+  mutate(
+    sign = case_when(estimate > 0 ~ "Later (after mean year)",
+                     TRUE ~ "Earlier (before mean year)"),
+    estimate = abs(estimate),
+    term = str_remove_all(term, "tfidf_text_")
+  ) %>%
+  group_by(sign) %>%
+  top_n(20, estimate) %>%
+  ungroup() %>%
+  ggplot(aes(x = estimate,
+             y = fct_reorder(term, estimate),
+             fill = sign)) +
+  geom_col(show.legend = FALSE) +
+  scale_x_continuous(expand = c(0, 0)) +
+  facet_wrap(~sign, scales = "free") +
+  labs(
+    y = NULL,
+    title = paste("Variable importance for predicting year of",
+                  "Supreme Court opinions"),
+    subtitle = paste("These features are the most importance",
+                     "in predicting the year of an opinion")
+  )
+
+final_fitted %>%
+  collect_predictions() %>%
+  ggplot(aes(year, .pred)) +
+  geom_abline(lty = 2, color = "gray80", size = 1.5) +
+  geom_point(alpha = 0.3) +
+  labs(
+    x = "Truth",
+    y = "Predicted year",
+    title = paste("Predicted and true years for the testing set of",
+                  "Supreme Court opinions"),
+    subtitle = "For the testing set, predictions are more reliable after 1850"
+  )
+
+```
+
+

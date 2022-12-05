@@ -1,0 +1,572 @@
+---
+title: "Part 3"
+author: "Eric Langowski"
+output: 
+  html_document:
+    code_folding: hide
+    df_print: paged
+    theme: sandstone
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(tidymodels)
+library(sf)
+library(tigris)
+library(tidycensus)
+theme_set(theme_bw())
+
+p1 <- "database/detroit.sqlite"
+p2 <- "static/solutions/database/detroit.sqlite"
+
+if(file.exists(p1)){
+  targf <- p1
+} else {
+  targf <- p2
+}
+
+con <- DBI::dbConnect(RSQLite::SQLite(), targf)
+
+
+wayne_tracts <- tigris::tracts(state=26, county = 163, cb = TRUE, year=2010) %>%
+  mutate(GEOID = str_remove_all(GEO_ID, '1400000US')) %>%
+  select(GEOID)
+detroit <- tigris::county_subdivisions(state=26, county=163, cb=TRUE) %>% filter(NAME == "Detroit")
+```
+
+```{r}
+joined_mini <- dplyr::tbl(con, 'sales') %>%
+  mutate(year = as.double(str_sub(sale_date, 1, 4))) %>%
+  left_join(dplyr::tbl(con, 'assessments'), 
+            by=c('parcel_num'='PARCELNO', 'year')) %>%
+  filter(property_c == 401,
+         sale_price >= 2000,
+         ASSESSEDVALUE >= 1000,
+         between(year, 2012, 2019)) %>%
+  collect() %>%
+  filter(str_detect(str_to_lower(sale_terms), 'valid arm'))
+
+ratios <- cmfproperty::reformat_data(
+  joined_mini,
+  'sale_price',
+  'ASSESSEDVALUE',
+  'year'
+)
+
+stats <- cmfproperty::calc_iaao_stats(ratios)
+output <- cmfproperty::diagnostic_plots(ratios = ratios, stats = stats, min_reporting_yr =  2012, max_reporting_yr = 2019)
+
+detroit_targ <- st_intersection(wayne_tracts, detroit %>% select(geometry))
+
+detroit_tracts <- wayne_tracts %>% filter(GEOID %in% detroit_targ$GEOID)
+
+
+targ_geo <- tbl(con, 'attributes') %>% 
+  filter(property_c == 401) %>%
+  select(parcel_num, Longitude, Latitude) %>%
+  collect() %>%
+  filter(!is.na(Latitude)) %>%
+  st_as_sf(coords=c("Longitude", "Latitude"))
+
+st_crs(targ_geo) <- st_crs(detroit_tracts)
+
+parcel_geo <- targ_geo %>% st_join(detroit_tracts, join=st_intersects) %>%
+  as.data.frame() %>%
+  select(-geometry)
+```
+
+
+
+# Introduction
+
+The Detroit housing market has experienced historic levels of foreclosures, disinvestment, and demolitions. Over 1 in 4 properties has been foreclosed due to property tax foreclosure since 2011 and many of these foreclosures were due to inaccurate, inflated assessments. These assessments remain problematic even after the City of Detroit undertook its first citywide reassessment in over 60 years which became effective in 2017.
+
+Since the beginning of the coronavirus pandemic, tax foreclosures have been halted and assessments have become more accurate. Detroit's housing market has begun to recover with some neighborhoods even gentrifying. Yet, the system remains inequitable especially for low-income homeowners of color.
+
+```{r}
+output[[2]]
+```
+
+This analysis focuses on single family homes (class 401) which were taxable, sold for more than $2000, and marked as arm's length by the assessor. Additionally, using the `cmfproperty` package, the IAAO arm's length standard was applied to the data. This will present a conservative picture of the housing market in Detroit. Note that homes in Detroit as supposed to be assessed at most at 50% of their fair market value.
+
+```{r}
+output[[1]]
+```
+
+
+```{r}
+homes_counts <- dplyr::tbl(con, 'assessments') %>% filter(propclass == 401) %>%
+  count(year) %>% collect()
+
+ggplot(homes_counts, aes(x=year, y=n)) +
+  geom_line(color='light blue', size=2) +
+  scale_y_continuous(labels=scales::comma, limit=c(0, NA)) +
+  scale_x_continuous(breaks=scales::pretty_breaks()) +
+  labs(x='Year', y='Count of 401 properties', title='Number of Homes in Detroit \nDecreased from 2011')
+```
+
+# Sales Ratio Analysis
+
+The sales ratio is a key unit for analyzing the accuracy of assessments. It is calculated by taking the ratio of a property's sale price to its assessment at the time of sale. The sales ratios can be evaluated using metrics from the International Association of Assessing Officers.
+
+
+```{r}
+iaao <- cmfproperty::iaao_graphs(stats=stats, ratios=ratios, min_reporting_yr = 2012, max_reporting_yr = 2019, jurisdiction_name = 'Detroit')
+```
+
+`r iaao[[1]]`
+
+```{r}
+iaao[[2]]
+```
+
+`r iaao[[3]]`
+
+
+```{r}
+iaao[[4]]
+```
+
+`r iaao[[5]]`
+
+```{r}
+iaao[[6]]
+```
+
+```{r}
+bs <- cmfproperty::binned_scatter(ratios = ratios, min_reporting_yr = 2012, max_reporting_yr = 2019, jurisdiction_name = 'Detroit')
+```
+
+`r bs[[1]]`
+
+```{r}
+bs[[2]]
+```
+
+# Modeling Overassessment
+
+## Specifications
+
+```{r}
+targ_sales_16 <- 
+  tbl(con, 'sales') %>% filter(year(sale_date) == 2016,
+                                 sale_price > 2000,
+                                 property_c == 401) %>%
+      select(-c(grantor, grantee, ecf, property_c)) %>%
+      arrange(desc(sale_price)) %>% 
+      collect() %>%
+      filter(str_detect(str_to_lower(sale_terms), 'valid arm')) %>%
+      distinct(parcel_num, .keep_all=TRUE)
+
+
+model_data <- tbl(con, 'assessments') %>% 
+  filter(year == 2016 | year == 2019, 
+         propclass == 401,
+         ASSESSEDVALUE > 2000) %>%
+  collect() %>%
+  left_join(
+    targ_sales_16,
+    by=c('PARCELNO'='parcel_num')
+  ) %>%
+  left_join(
+    tbl(con, 'attributes') %>% select(parcel_num, Neighborhood, total_squa, 
+                                  heightcat, extcat, has_garage, has_basement,
+                                  bathcat, total_floo, year_built, Longitude, Latitude) %>%
+      collect(),
+    by=c('PARCELNO'='parcel_num')
+  ) %>%
+  left_join(
+    parcel_geo,
+    by=c('PARCELNO'='parcel_num')
+  )
+
+foreclosures_10_to_15 <- tbl(con, 'foreclosures') %>%
+  rename(parcel_num = prop_parcelnum) %>%
+  pivot_longer(!c(prop_addr, parcel_num), names_to='Year') %>%
+  filter(!is.na(value)) %>%
+  left_join(tbl(con, 'attributes') %>% select(parcel_num, Neighborhood)) %>%
+  filter(between(as.numeric(Year), 2010, 2015),
+         !is.na(Neighborhood)) %>%
+  count(Neighborhood) %>% left_join(
+    tbl(con, 'attributes') %>% filter(property_c == 401) %>% count(Neighborhood) %>%
+  rename(total_prop = n)
+  ) %>%
+  collect() %>%
+  mutate(foreclosures_per_prop = `n` / total_prop) %>%
+  select(-n, -total_prop)
+
+share_over_14_to_15 <- ratios %>% filter(between(SALE_YEAR, 2014, 2015)) %>%
+  group_by(Neighborhood = ecf) %>%
+  summarize(pct_over_50 = length(parcel_num[RATIO > .5]) / n())
+
+
+avg_sp_per_sqft <- ratios %>% filter(between(SALE_YEAR, 2014, 2018)) %>%
+  left_join(tbl(con, 'attributes') %>% select(parcel_num, total_squa) %>% collect()) %>%
+  group_by(Neighborhood = ecf) %>%
+  summarize(avg_sp_per_sq = mean(SALE_PRICE / total_squa, na.rm=T),
+            med_sp_per_sq = median(SALE_PRICE / total_squa, na.rm=T),
+            n())
+
+model_data <- model_data %>% mutate(RATIO = ASSESSEDVALUE / sale_price) %>%
+  mutate(
+  class2 = if_else(RATIO <= .5, 'Under', 'Over'),
+  sp_log = log10(sale_price),
+  across(contains('cat') | contains('has'), factor)
+  ) %>%
+  left_join(share_over_14_to_15) %>%
+  left_join(foreclosures_10_to_15) %>%
+  left_join(avg_sp_per_sqft)
+```
+
+Since we don't have a lot of arm's length sales in 2016 (about 4200), we may want to use a training method which resamples our data. Initially, I will use 10-fold cross validation to train and aggregate ten models. For our classification model, we will initially use a random forest of 500 trees. More on that later.
+
+### recipe
+
+```{}
+class_recipe <- recipe(
+  class2 ~
+    PARCELNO + Neighborhood + ASSESSEDVALUE +
+    total_squa + heightcat + extcat + has_garage +
+    has_basement + bathcat + total_floo + pct_over_50 +
+    foreclosures_per_prop +
+    year_built + Latitude + Longitude,
+  data = sale_model_data
+) %>%
+  update_role(PARCELNO, new_role = 'PARCELID') %>%
+  step_log(ASSESSEDVALUE) %>%
+  step_impute_mean(total_squa, total_floo, year_built, Latitude, Longitude, pct_over_50, foreclosures_per_prop) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  prep()
+```
+
+Our recipe is above. Key steps highlighted:
+
+- Logging assessed value, ensures we capture variability in assessed value which ranges from 1000 to 120000.
+
+## Workflow Prep
+
+Our `tidymodels` workflow requires a model, formula, and recipe. Some of these pieces will be the same across our three specifications.
+
+
+```{r}
+sale_model_data <- model_data %>% filter(!is.na(RATIO), year == 2016)
+
+folds <- rsample::vfold_cv(sale_model_data, v = 10, strata = class2)
+
+class_model <-
+  rand_forest(trees = 500) %>%
+  set_mode('classification') %>%
+  set_engine('ranger')
+
+class_recipe <- recipe(
+  class2 ~
+    PARCELNO + Neighborhood + 
+    ASSESSEDVALUE +
+    total_squa + heightcat + extcat + has_garage +
+    has_basement + bathcat + total_floo + pct_over_50 +
+    foreclosures_per_prop +
+    year_built + GEOID,
+  data = sale_model_data
+) %>%
+  step_log(ASSESSEDVALUE) %>%
+  step_impute_mean(total_squa, total_floo, year_built, pct_over_50, foreclosures_per_prop) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  step_other(threshold = 1e-4) %>%
+  prep()
+```
+
+## Workflow
+
+```{r}
+first_workflow <-
+  workflow() %>%
+  add_model(class_model) %>%
+  add_recipe(class_recipe)
+model_fit <- first_workflow %>%
+  fit_resamples(folds, control=control_resamples(save_pred=TRUE))
+```
+
+
+```{r}
+our_results <- collect_metrics(model_fit, summarize=TRUE)
+our_results %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+our_preds <- collect_predictions(model_fit, summarize=TRUE) 
+our_preds %>%
+  count(.pred_class) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+conf_mat(our_preds, estimate=.pred_class, truth=class2) 
+```
+
+Our model has pretty mediocre accuracy of `r str_glue("{our_results %>% filter(.metric=='accuracy') %>% pull(mean) %>% round(3)}")`. 
+
+## Classifier Accuracy Metrics
+
+```{r}
+our_preds <- collect_predictions(model_fit, summarize=TRUE) 
+multi_metric <- metric_set(recall, specificity, precision, accuracy, f_meas)
+multi_metric(our_preds, truth=class2, estimate=.pred_class) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+Some initial views on our model:
+
+```{r}
+sale_model_data %>%
+  mutate(pred = our_preds$.pred_class,
+         bin = ntile(sale_price, 10)) %>%
+  group_by(bin) %>%
+  summarize(avg_sp = dollar(mean(sale_price)),
+            share_correct = percent(sum(class2 == pred) / n()),
+            share_over = percent(sum(class2 == 'Over') / n()))  %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+```{r}
+roc_curve(our_preds, class2, .pred_Over) %>%
+  autoplot()
+```
+
+## Predictions
+
+We now fit/train our model on all the sale data and run predictions on all properties.
+
+```{r}
+trained <- first_workflow %>% fit(sale_model_data)
+
+all_predictions <- trained %>% augment(model_data %>% filter(year == 2016))
+
+all_predictions %>% count(.pred_class)  %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+Now lets model our predictions across race and make a map.
+
+```{r}
+wayne <- get_acs(geography = "tract", 
+              variables = c(white_alone = "B02001_002",
+                            total_pop = "B02001_001",
+                            medincome = "B19013_001"),
+              state=26, county=163,
+              output='wide') %>%
+  mutate(pct_nonwhite = (total_popE - white_aloneE) / total_popE) %>%
+  select(GEOID, pct_nonwhite, medincomeE)
+
+geoid_over <- all_predictions %>% group_by(GEOID) %>%
+  summarize(
+    pct_over = sum(.pred_class == 'Over') / n(),
+    size = n()
+  ) %>%
+  filter(!is.na(GEOID)) %>%
+  left_join(wayne)
+
+ggplot(geoid_over, aes(x=pct_over, y=pct_nonwhite)) +
+  geom_point(alpha=.3, size=3) +
+  geom_smooth(se=FALSE) +
+  labs(x='Pct Overassessed Prediction', y='Pct NonWhite Tract', title='Predicted Overassessment by NonWhite Pop')
+
+```
+
+```{r}
+library(leaflet)
+geo_data <- detroit_tracts %>%
+  left_join(geoid_over)
+
+
+label_str <- str_glue("<strong>Tract %s</strong><br> Pct Over %s<br>")
+labels <- sprintf(label_str,
+                geo_data$GEOID,
+                percent(geo_data$pct_over, .1)) %>% 
+  lapply(htmltools::HTML)
+### make palette
+pal1 <-
+  colorNumeric(
+    palette = "Oranges",
+    domain = geo_data$pct_over,
+    na.color = "Grey"
+  )
+  
+m <- leaflet() %>%
+  addTiles() %>% addPolygons(
+    data = geo_data,
+    fillColor = ~ pal1(pct_over),
+    weight = 0.5,
+    opacity = 0.5,
+    color = "white",
+    dashArray = 3,
+    fillOpacity = 0.7,
+    highlight = highlightOptions(
+      weight = 5,
+      color = "#666",
+      dashArray = "",
+      fillOpacity = 0.7,
+      bringToFront = TRUE
+    ),
+    label = labels,
+    labelOptions = labelOptions(
+      style = list("font-weight" = "normal", padding = "3px 8px"),
+      textsize = "15px",
+      direction = "auto"
+    )
+  ) %>%
+  addLegend(
+    pal = pal1,
+    values = geo_data$pct_over,
+    opacity = 0.7,
+    title = NULL,
+    position = "bottomright"
+  )
+  
+m
+```
+
+# Modeling Assessment
+
+Generating our own assessments (for 2019) is very similar to modeling overassessment. Initially, I will use the same recipe and formula except replacing class with sale price.  I will also demonstrate the xgboost (boosted decision tree) package. Boosted decision trees are similar to random forests except each tree is created iteratively in a process of continuous improvement.
+
+Training and testing will occur across 2014 to 2018 with a 90/10 split based on time. Predictions will then be made for 2019 compared to the baseline of actual assessed values. Workflow is the same except that xgboost requires us to bake our data first.
+
+```{r}
+time_split <- rsample::initial_time_split(
+  ratios %>% select(parcel_num, SALE_PRICE_ADJ, sale_date, ASSESSED_VALUE_ADJ, SALE_YEAR) %>% 
+    filter(between(SALE_YEAR, 2013, 2018)) %>% 
+    arrange(sale_date) %>% left_join(
+      model_data %>% filter(year == 2019) %>%
+        select(-c(RATIO, class2, sp_log, sale_date)), by=c('parcel_num'='PARCELNO')
+    ) %>% mutate(sp_log = log10(SALE_PRICE_ADJ),
+                 sale_date = ymd(sale_date)),
+  .9)
+
+train <- training(time_split) 
+test <- testing(time_split)
+
+reg_model <- boost_tree(trees=200) %>%
+  set_mode('regression') %>%
+  set_engine('xgboost')
+
+
+reg_recipe <- recipe(sp_log ~  parcel_num + Neighborhood + ASSESSEDVALUE +
+    total_squa + heightcat + extcat + has_garage +
+    has_basement + bathcat + total_floo + pct_over_50 +
+    foreclosures_per_prop +
+    year_built + GEOID + sale_date,
+                       data=train) %>%
+  step_date(sale_date, features = c("dow", "month", "year"), keep_original_cols = FALSE) %>%
+  update_role(parcel_num, new_role = 'PARCELID') %>%
+  step_log(ASSESSEDVALUE) %>%
+  step_impute_mean(total_squa, total_floo, year_built, pct_over_50, foreclosures_per_prop) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  step_other(threshold = 1e-4) %>%
+  prep()
+
+
+
+reg_workflow <-
+  workflow() %>%
+  add_model(reg_model) %>%
+  add_recipe(reg_recipe)
+```
+
+## Model Evaluation
+
+```{r}
+model_fit_reg <- reg_workflow %>%
+  fit(train)
+
+our_preds <- model_fit_reg %>% augment(train)
+
+multi_metric <- metric_set(mape, rmse, rsq)
+multi_metric(our_preds, truth=sp_log, estimate=.pred) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+Our model:
+
+```{r}
+our_preds <- model_fit_reg %>% augment(
+  test
+)
+
+multi_metric(our_preds, truth=sp_log, estimate=.pred) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+Actual assessments:
+
+```{r}
+multi_metric(our_preds, truth=sp_log, estimate=log10(2*ASSESSED_VALUE_ADJ)) %>%
+  kableExtra::kable() %>%
+  kableExtra::kable_material(c("striped", "hover"))
+```
+
+```{r}
+ratios_mini <- cmfproperty::reformat_data(
+  our_preds %>% mutate(av_pred = 0.5 * 10^.pred),
+  'SALE_PRICE_ADJ',
+  'av_pred',
+  'SALE_YEAR'
+)
+
+bs <- cmfproperty::binned_scatter(ratios = ratios_mini, min_reporting_yr = 2018, max_reporting_yr = 2018,
+                                  jurisdiction_name = 'Detroit')
+```
+
+
+`r bs[[1]]`
+
+```{r}
+bs[[2]]
+```
+
+```{r}
+our_preds2 <- model_fit_reg %>% augment(
+  model_data %>% 
+    filter(year == 2019) %>% 
+    mutate(sale_date = ymd('2019-01-01')) %>%
+    rename(parcel_num = PARCELNO)
+)
+
+our_preds2 %>% 
+         select(parcel_num, ASSESSEDVALUE, .pred) %>% 
+         mutate(.pred = 0.5 * 10^.pred) %>% 
+         pivot_longer(!parcel_num) %>%
+ggplot(aes(x=value, color=name, fill=name)) +
+  geom_density(alpha=.3) +
+  scale_x_log10(labels=dollar) +
+  labs(x = 'Assessed Value', y='Density', 
+       fill = 'Type', color='Type', title='Density of Predictions and AV')
+
+```
+
+```{r}
+library(DALEXtra)
+
+explain_reg <- explain_tidymodels(
+  model_fit_reg,
+  data = train %>% select(-contains('ADJ'), -`n()`),
+  y = train$sp_log,
+  verbose=TRUE
+)
+
+targ <- model_parts(explain_reg, loss_function = loss_root_mean_square)
+
+plot(targ)
+
+```
+
+

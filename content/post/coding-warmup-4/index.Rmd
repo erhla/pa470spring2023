@@ -1,0 +1,123 @@
+---
+title: "Coding Warmup 4"
+date: 2022-02-10T00:00:00-00:00
+categories: ["R"]
+tags: ["warmup"]
+publishdate: 2022-01-01T00:00:00-00:00
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,
+                      include = FALSE,
+                      eval = FALSE)
+
+
+```
+
+Make a classification model and run evaluations.
+
+## Part A
+
+We are going to use a toy dataset called bivariate. There is a training, testing, and validation dataset provided.
+
+```{r, eval=TRUE, include=TRUE}
+library(tidyverse)
+library(tidymodels)
+theme_set(theme_bw())
+
+data(bivariate)
+
+ggplot(bivariate_train, aes(x=A, y=B, color=Class)) +
+  geom_point(alpha=.3)
+
+```
+
+Use `logistic_reg` and `glm` to make a classification model of Class ~ A * B. Then use tidy and glance to see some summary information on our model. Anything stand out to you?
+
+```{r}
+log_model <- logistic_reg() %>%
+  set_engine('glm') %>%
+  set_mode('classification') %>%
+  fit(Class ~ A*B,
+      data = bivariate_train)
+
+log_model %>% tidy()
+log_model %>% broom::glance()
+```
+
+## Part B
+
+Use augment to get predictions. Look at the predictions.
+
+```{r}
+test_preds <- log_model %>% augment(bivariate_test)
+
+test_preds 
+```
+
+## Part C
+
+Visually inspect the predictions using the code below
+
+```{r}
+# log_model, your parnsip model
+# bivariate_train / bivariate_val, data from bivariate
+
+# to plot the countour we need to create a grid of points and get the model prediction at each point
+x_grid <-
+  expand.grid(A = seq(min(bivariate_train$A), max(bivariate_train$A), length.out = 100),
+              B = seq(min(bivariate_train$B), max(bivariate_train$B), length.out = 100))
+x_grid_preds <- log_model %>% augment(x_grid)
+
+# plot predictions from grid as countour and validation data on plot
+ggplot(x_grid_preds, aes(x = A, y = B)) + 
+  geom_contour(aes(z = .pred_One), breaks = .5, col = "black") + 
+  geom_point(data = bivariate_val, aes(col = Class), alpha = 0.3)
+```
+
+## Part D
+
+Evaluate your model using the following functions (which dataset(s) should you use to do this train, test, or validation). See if you can provide a basic interpretation of the measures.
+
+- roc_auc
+- accuracy
+- roc_curve and autoplot
+- f_meas
+
+```{r}
+val_preds <- log_model %>% augment(bivariate_val)
+
+val_preds %>% roc_auc(truth = Class,
+                      estimate = .pred_One)
+
+val_preds %>% accuracy(truth = Class,
+                      estimate = .pred_class)
+
+
+roc_curve(val_preds,
+        truth = Class,
+        estimate = .pred_One) %>%
+  autoplot()
+
+f_meas(val_preds,
+        truth = Class,
+        estimate = .pred_class) 
+```
+
+## Part E
+
+Recall Table 8.4 from the textbook. If necessary, class one can be positive and class two can be negative. Using the output from conf_mat, visually verify you know how to calculate the following:
+
+- True Positive Rate (TPR), Sensitivity, or Recall
+- True Negative Rate (TNR) or Specificity
+- False Positive Rate, Type I error
+- False Negative Rate (FNR), Type II error
+- Positive Predictive Value (PPV) or Precision
+
+```{r}
+val_preds %>% conf_mat(truth = Class,
+                      estimate = .pred_class) %>%
+  autoplot("heatmap")
+```
+
+

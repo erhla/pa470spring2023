@@ -1,0 +1,189 @@
+---
+title: "Part 1"
+author: "Eric Langowski"
+output: 
+  html_document:
+    code_folding: hide
+    df_print: paged
+    theme: sandstone
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(tidymodels)
+
+con <- DBI::dbConnect(RSQLite::SQLite(), "database/detroit.sqlite")
+
+assessments <- dplyr::tbl(con, 'assessments') %>% collect()
+sales <- dplyr::tbl(con, 'sales') %>% collect()
+parcels <- dplyr::tbl(con, 'parcels') %>% collect()
+
+joined <- sales %>%
+  mutate(year = year(ymd(sale_date))) %>%
+  left_join(assessments, 
+            by=c('parcel_num'='PARCELNO', 'year'))
+
+joined_mini <- joined %>%
+  filter(property_c == 401,
+         sale_price >= 2000,
+         ASSESSEDVALUE >= 1000,
+         str_detect(str_to_lower(sale_terms), 'valid arm'))
+
+theme_set(theme_bw())
+
+ratios <- cmfproperty::reformat_data(
+  joined_mini,
+  'sale_price',
+  'ASSESSEDVALUE',
+  'year'
+)
+
+stats <- cmfproperty::calc_iaao_stats(ratios)
+
+output <- cmfproperty::diagnostic_plots(ratios = ratios, stats = stats, min_reporting_yr =  2012, max_reporting_yr = 2019)
+```
+
+# Introduction
+
+The Detroit housing market has experienced historic levels of foreclosures, disinvestment, and demolitions. Over 1 in 4 properties has been foreclosed due to property tax foreclosure since 2011 and many of these foreclosures were due to inaccurate, inflated assessments. These assessments remain problematic even after the City of Detroit undertook its first citywide reassessment in over 60 years which became effective in 2017.
+
+Since the beginning of the coronavirus pandemic, tax foreclosures have been halted and assessments have become more accurate. Detroit's housing market has begun to recover with some neighborhoods even gentrifying. Yet, the system remains inequitable especially for low-income homeowners of color.
+
+```{r}
+output[[2]]
+```
+
+This analysis focuses on single family homes (class 401) which were taxable, sold for more than $2000, and marked as arm's length by the assessor. Additionally, using the `cmfproperty` package, the IAAO arm's length standard was applied to the data. This will present a conservative picture of the housing market in Detroit. Note that homes in Detroit as supposed to be assessed at most at 50% of their fair market value.
+
+```{r}
+output[[1]]
+```
+
+
+```{r}
+homes_counts <- assessments %>% filter(propclass == 401) %>%
+  count(year)
+
+ggplot(homes_counts, aes(x=year, y=n)) +
+  geom_line(color='light blue', size=2) +
+  scale_y_continuous(labels=scales::comma, limit=c(0, NA)) +
+  scale_x_continuous(breaks=scales::pretty_breaks()) +
+  labs(x='Year', y='Count of 401 properties', title='Number of Homes in Detroit \nDecreased from 2011')
+```
+
+# Sales Ratio Analysis
+
+The sales ratio is a key unit for analyzing the accuracy of assessments. It is calculated by taking the ratio of a property's sale price to its assessment at the time of sale. The sales ratios can be evaluated using metrics from the International Association of Assessing Officers.
+
+
+```{r}
+iaao <- cmfproperty::iaao_graphs(stats=stats, ratios=ratios, min_reporting_yr = 2012, max_reporting_yr = 2019, jurisdiction_name = 'Detroit')
+```
+
+`r iaao[[1]]`
+
+```{r}
+iaao[[2]]
+```
+
+`r iaao[[3]]`
+
+
+```{r}
+iaao[[4]]
+```
+
+`r iaao[[5]]`
+
+```{r}
+iaao[[6]]
+```
+
+```{r}
+bs <- cmfproperty::binned_scatter(ratios = ratios, min_reporting_yr = 2012, max_reporting_yr = 2019, jurisdiction_name = 'Detroit')
+```
+
+`r bs[[1]]`
+
+```{r}
+bs[[2]]
+```
+
+# Initial Relationships
+
+## Property Sales
+
+```{r}
+ratios_chars <- 
+  ratios %>%
+  left_join(parcels, by=c('parcel_num'='parcel_number')) %>%
+  mutate(year = as.character(TAX_YEAR))
+
+lm_model <-
+  parsnip::linear_reg() %>%
+  set_engine("lm") %>%
+  set_mode('regression')
+
+first_recipe <- recipe(sale_price ~
+                         ecf + total_square_footage +
+                         year, data=ratios_chars) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors())
+
+first_workflow <-
+  workflow() %>%
+  add_model(lm_model) %>%
+  add_recipe(first_recipe)
+
+model_fit <- first_workflow %>%
+  fit(data=ratios_chars)
+
+model_fit %>% glance()
+model_fit %>% tidy()
+```
+
+## Foreclosures
+
+```{r}
+foreclosures <- tbl(con, 'foreclosures') %>%
+  collect() %>%
+  select(-prop_addr) %>%
+  pivot_longer(!prop_parcelnum, names_to='year', values_to='foreclosed') %>%
+  filter(!is.na(foreclosed)) %>%
+  distinct()
+
+foreclosures_chars <- 
+  assessments %>%
+  mutate(year = as.character(year)) %>%
+  filter(propclass == 401) %>%
+  left_join(foreclosures, by=c('PARCELNO'='prop_parcelnum', 'year')) %>%
+  left_join(parcels %>% select(parcel_number, total_square_footage, year_built, zip_code), by=c('PARCELNO'='parcel_number')) %>%
+  mutate(foreclosed = replace_na(foreclosed, 0),
+         foreclosed = as.factor(foreclosed),
+         zip_code = as.factor(zip_code))
+
+glm_model <-
+  parsnip::logistic_reg() %>%
+  set_engine("glm") %>%
+  set_mode('classification')
+
+second_recipe <- recipe(foreclosed ~
+                         total_square_footage + year_built + zip_code,
+                        data=foreclosures_chars) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors())
+
+second_workflow <-
+  workflow() %>%
+  add_model(glm_model) %>%
+  add_recipe(second_recipe)
+
+model_fit <- second_workflow %>%
+  fit(data=foreclosures_chars %>% slice_sample(n=10000))
+
+model_fit %>% glance()
+model_fit %>% tidy()
+```
+

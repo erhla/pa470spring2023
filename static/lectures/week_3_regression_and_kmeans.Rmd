@@ -1,0 +1,344 @@
+---
+title: "Week 3 Regression and KMeans"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    theme: sandstone
+    number_sections: true
+---
+
+```{r initial_setup, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+library(lubridate)
+library(kableExtra)
+library(scales)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      eval= TRUE)
+
+theme_set(theme_bw())
+```
+
+
+# Regressions
+
+Let's look at our divvy data. It has been augmeneted and aggregated now so each row is the number of rides in an hour citywide and information on traffic and weather. 
+
+```{r}
+divvy_data <- read_csv('https://github.com/erhla/pa470spring2022/raw/main/static/lectures/week_3_data.csv')
+
+
+glimpse(divvy_data)
+```
+
+There's a lot of missing values! Our weather data comes from the open data set on beaches. Traffic derives from data on CTA bus speeds.
+
+Let's look at how the variables are related to each other using `corrr` from `tidymodels.`
+
+```{r}
+divvy_data %>%
+  dplyr::select(-started_hour) %>%
+  corrr::correlate() %>%
+  corrr::fashion()
+
+divvy_data %>%
+  select(-started_hour) %>%
+  corrr::correlate() %>%
+  corrr::rplot(colors='Brown')
+```
+
+We can see that rides is most correlated with temperature/solar radiation.
+
+How important might categorical variables be? Let's run an ANOVA (Analysis of Variation) test on hour of day.
+
+```{r}
+aov(rides ~ hour(started_hour), data=divvy_data) %>% broom::tidy()
+```
+
+What other time based trends should we consider?
+
+```{r}
+ggplot(divvy_data, aes(x=started_hour, y=rides)) +
+  geom_smooth()
+```
+
+Starting with solar radiation...let's look at what `broom` has to offer.
+
+```{r}
+m1 <- lm(rides ~ solar_rad, data=divvy_data)
+
+m1 %>% broom::tidy()
+
+m1 %>% broom::glance()
+
+m1 %>% broom::augment()
+```
+
+From glance we can see that r2 is .274, modest.
+
+One way to see what is going is to see if the residuals look normally distributed.
+
+```{r}
+ggplot(m1 %>% augment(), aes(x=.resid)) +
+  geom_density(fill='navy', alpha=.6)
+```
+
+How does solar radiation look?
+
+```{r}
+ggplot(m1 %>% augment(), aes(x=solar_rad)) +
+  geom_density(fill='navy', alpha=.6)
+```
+
+
+```{r}
+ggplot(m1 %>% augment(), aes(x=log(solar_rad))) +
+  geom_density(fill='navy', alpha=.6)
+```
+
+```{r}
+m1_log <- lm(rides ~ log(solar_rad), data=divvy_data %>% filter(solar_rad > 0))
+
+m1_log %>% broom::tidy()
+
+m1_log %>% broom::glance()
+
+m1_log %>% broom::augment()
+```
+
+```{r}
+ggplot(m1_log %>% augment(), aes(x=.std.resid)) +
+  geom_density(fill='navy', alpha=.6)
+```
+
+This is better, but we can't really justify dropping darkness.
+
+Let's add some time.
+
+```{r}
+m2 <- lm(rides ~ solar_rad + factor(hour(started_hour)), data=divvy_data)
+
+m2 %>% glance()
+```
+
+```{r}
+m3 <- lm(rides ~ solar_rad + factor(hour(started_hour)) + 
+           factor(wday(started_hour)) +
+           factor(month(started_hour)) +
+           temp + wind + interval_rain + avg_speed, data=divvy_data)
+
+m3 %>% glance()
+
+ggplot(m3 %>% augment(), aes(x=.std.resid)) +
+  geom_density(fill='navy', alpha=.6)
+```
+
+# Regression Prediction
+
+## Tidymodels Primer
+
+Tidymodels is a collection of packages like tidyverse (which is ggplot2, dplyr, tidyr, readr, purrr, tibble, stringr, forcats plus lubridate, dbplyr, dbi, rvest, readxl etc). Let's briefly look at what we have with Tidymodels.
+
+[Tidymodels packages](https://www.tidymodels.org/packages/)
+
+The core tidymodels packages work together to enable a wide variety of modeling approaches:
+
+
+**tidymodels** is a meta-package that installs and load the core packages listed below that you need for modeling and machine learning.
+
+**rsample** provides infrastructure for efficient data splitting and resampling.
+
+**parsnip** is a tidy, unified interface to models that can be used to try a range of models without getting bogged down in the syntactical minutiae of the underlying packages.
+
+**recipes** is a tidy interface to data pre-processing tools for feature engineering.
+
+**workflows** bundle your pre-processing, modeling, and post-processing together.
+
+**tune** helps you optimize the hyperparameters of your model and pre-processing steps
+
+**yardstick** measures the effectiveness of models using performance metrics
+
+**broom** converts the information in common statistical R objects into user-friendly, predictable formats.
+
+**dials** creates and manages tuning parameters and parameter grids
+
+There's a bunch of additional packages including corrr and more specialized models (like spatialsample).
+
+## yardstick
+
+[Metric types](https://yardstick.tidymodels.org/articles/metric-types.html)
+
+There are three main metric types in yardstick: **class, class probability, and numeric.** Each type of metric has standardized argument syntax, and all metrics return the same kind of output (a tibble with 3 columns). This standardization allows metrics to easily be grouped together and used with grouped data frames for computing on multiple resamples at once. Below are the three types of metrics, along with the types of the inputs they take.
+
+- Class metrics (hard predictions)
+  - truth - factor
+  - estimate - factor
+
+- Class probability metrics (soft predictions)
+  - truth - factor
+  - estimate - multiple numeric columns containing class probabilities
+
+- Numeric metrics
+  - truth - numeric
+  - estimate - numeric
+
+
+
+## Getting Prediction
+
+A key step with building a model is to use the trained regression model to *score* the test set.
+
+```{r}
+grouped <- rsample::initial_split(divvy_data)
+
+train <- training(grouped)
+test  <- testing(grouped)
+
+lm_model <-
+  parsnip::linear_reg() %>%
+  set_engine("lm") %>%
+  fit(rides ~ solar_rad + factor(hour(started_hour)) + 
+           factor(wday(started_hour)) +
+           factor(month(started_hour)) +
+           temp + wind + interval_rain + avg_speed, data=train)
+
+preds <- 
+  predict(lm_model, test %>% filter(month(started_hour) >= 5)) 
+
+test_preds <- lm_model %>% 
+  augment(test %>% filter(month(started_hour) >=5))
+```
+
+mape (mean absolute percentage error) - avg pct difference b/t forecast and actual
+rsme (root mean square error) - std of residuals
+
+```{r}
+yardstick::mape(test_preds, 
+     truth = rides,
+     estimate = .pred)
+yardstick::rmse(test_preds, 
+     truth = rides,
+     estimate = .pred)
+
+ggplot(test_preds, aes(x=.pred)) +
+  geom_density()
+```
+
+This model isn't great. Can you improve it?
+
+# Unsupervised 
+
+[Tidymodels K Means](https://www.tidymodels.org/learn/statistics/k-means/)
+
+```{r}
+set.seed(27)
+
+centers <- tibble(
+  cluster = factor(1:3), 
+  num_points = c(100, 150, 50),  # number points in each cluster
+  x1 = c(5, 0, -3),              # x1 coordinate of cluster center
+  x2 = c(-1, 1, -2)              # x2 coordinate of cluster center
+)
+
+labelled_points <- 
+  centers %>%
+  mutate(
+    x1 = map2(num_points, x1, rnorm),
+    x2 = map2(num_points, x2, rnorm)
+  ) %>% 
+  select(-num_points) %>% 
+  unnest(cols = c(x1, x2))
+
+ggplot(labelled_points, aes(x1, x2, color = cluster)) +
+  geom_point(alpha = 0.5)
+```
+
+```{r}
+points <- 
+  labelled_points %>% 
+  select(-cluster)
+
+kclust <- kmeans(points, centers = 3)
+kclust
+summary(kclust)
+```
+
+- `cluster` (300 values) contains information about each point
+- `centers`, `withinss`, and `size` (3 values) contain information about each cluster
+- `totss`, `tot.withinss`, `betweenss`, and `iter` (1 value) contain information about the full clustering
+
+```{r}
+augment(kclust, points)
+
+tidy(kclust)
+
+glance(kclust)
+```
+
+Exploratory clustering
+
+While these summaries are useful, they would not have been too difficult to extract out from the data set yourself. The real power comes from combining these analyses with other tools like dplyr.
+
+Let’s say we want to explore the effect of different choices of k, from 1 to 9, on this clustering. First cluster the data 9 times, each using a different value of k, then create columns containing the tidied, glanced and augmented data:
+
+```{r}
+kclusts <- 
+  tibble(k = 1:9) %>%
+  mutate(
+    kclust = map(k, ~kmeans(points, .x)),
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augmented = map(kclust, augment, points)
+  )
+
+kclusts
+```
+
+We can turn these into three separate data sets each representing a different type of data: using tidy(), using augment(), and using glance(). Each of these goes into a separate data set as they represent different types of data.
+
+```{r}
+clusters <- 
+  kclusts %>%
+  unnest(cols = c(tidied))
+
+assignments <- 
+  kclusts %>% 
+  unnest(cols = c(augmented))
+
+clusterings <- 
+  kclusts %>%
+  unnest(cols = c(glanced))
+```
+
+
+Now we can plot the original points using the data from augment(), with each point colored according to the predicted cluster.
+
+```{r}
+p1 <- 
+  ggplot(assignments, aes(x = x1, y = x2)) +
+  geom_point(aes(color = .cluster), alpha = 0.8) + 
+  facet_wrap(~ k)
+p1
+```
+
+
+Already we get a good sense of the proper number of clusters (3), and how the k-means algorithm functions when k is too high or too low. We can then add the centers of the cluster using the data from tidy():
+
+
+```{r}
+p2 <- p1 + geom_point(data = clusters, size = 10, shape = "x")
+p2
+```
+
+The data from glance() fills a different but equally important purpose; it lets us view trends of some summary statistics across values of k. Of particular interest is the total within sum of squares, saved in the tot.withinss column.
+
+
+```{r}
+ggplot(clusterings, aes(k, tot.withinss)) +
+  geom_line() +
+  geom_point()
+```
+
+This represents the variance within the clusters. It decreases as k increases, but notice a bend (or “elbow”) around k = 3. This bend indicates that additional clusters beyond the third have little value. 

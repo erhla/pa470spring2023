@@ -1,0 +1,39 @@
+baseurl: https://pa470spring2022.netlify.app/
+languageCode: en-us
+title: PA 470
+theme: hugo-lithium
+googleAnalytics: ''
+disqusShortname: ''
+ignoreFiles:
+  - \.Rmd$
+  - \.Rmarkdown$
+  - _cache$
+  - \.knit\.md$
+  - \.utf8\.md$
+permalinks:
+  post: /:slug/
+menu:
+  main:
+    - name: Home
+      url: /
+    - name: Calendar
+      url: /calendar/
+    - name: Syllabus
+      url: https://github.com/erhla/pa470spring2022/blob/main/files/PA%20470.docx
+    - name: About
+      url: /about/
+params:
+  MathJaxCDN: //cdnjs.cloudflare.com/ajax/libs
+  MathJaxVersion: 2.7.5
+  description: A website built through Hugo and blogdown.
+  highlightjsCDN: //cdnjs.cloudflare.com/ajax/libs
+  highlightjsLang:
+    - r
+    - yaml
+  highlightjsTheme: github
+  highlightjsVersion: 9.12.0
+markup:
+  defaultMarkdownHandler: goldmark
+  goldmark:
+    renderer:
+      unsafe: yes
