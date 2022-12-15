@@ -1,6 +1,6 @@
 ---
 title: "Lectures"
-date: 2022-01-13T00:00:00-00:00
+date: 2023-01-12T00:00:00-00:00
 categories: ["R"]
 publishdate: 2022-01-01T00:00:00-00:00
 ---
@@ -12,23 +12,24 @@ knitr::opts_chunk$set(collapse = TRUE,
 
 # Week 1
 
-- [Slides](/lectures/week_1.html)
-- [Code](/lectures/week_1.R)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/1zxve9GhpXo03ewLF6nuIT815dEMflUmt5JlzW9TZyOCceCYq82pljPwRmx_q9ey.vMFwpBLBhwRJiPNZ)
+- [Code Output](/lectures/week_1.html)
+- [Code](/lectures/week_1.Rmd)
 
+
+```{r eval=FALSE, include=FALSE}
 # Week 2
 
 - [Slides](/lectures/week_2.html)
 - [Code](/lectures/week_2_spatial.Rmd)
 - [Code Output](/lectures/week_2_spatial.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/h6XgGC0LZhG5OPibcxE0x4Q3JWbMLXCl2ybr-DOxlER9ZivfnmbNWYhPXpnxJ4ts.UMyJbIAU5I2Gd9J1 )
+
 
 # Week 3
 
 - [Slides](https://docs.google.com/presentation/d/1BsgLD78mG1i6DVbBU09qRPSC2CEmCuFp42e594lyoR8/edit?usp=sharing)
 - [Code](/lectures/week_3_regression_and_kmeans.Rmd)
 - [Code Output](/lectures/week_3_regression_and_kmeans.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/a1bTqWEmStpxIue8YjjiL3xegtQ9IlLIG8rbbj189YYwBy5uqj2pzaK0YrZpUFkZ.LrBjHiHc8P9Ze3b9 )
+
 
 # Week 4
 
@@ -42,29 +43,29 @@ knitr::opts_chunk$set(collapse = TRUE,
 - [Slides](https://docs.google.com/presentation/d/1j7S7FDCjgT0UrdzSdFeXVYBo93E6YaBGIcv2UwY1Vi0/edit?usp=sharing)
 - [Code](/lectures/week_5.Rmd)
 - [Code Output](/lectures/week_5.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/7A1baGspgTMWoz37XxwzDasgvrrFWU090bwiTLQbcq_GZ0rSaeKskXKP4kM6wZDD.CMiw5sXWJaUx0TIa )
+
 
 # Week 6
 
 - [Code](/lectures/week_6.Rmd)
 - [Code Output](/lectures/week_6.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/JQIffpaM2etxb8bfzaWWov-imvg7vcm8YW9KyLfPlqR9p3C2SKEDf3H_iElBDjVM.KdBE8euSJfut0dqA)
+
 
 # Week 7
 
 - [Code](/lectures/week_7.Rmd)
 - [Code Output](/lectures/week_7.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/u0dqhfrpqNJya1WLFAjS5_R9XY7SM_qzbBhpmixLuBfaKPTUeJVcVIGIVlo_2Y8.SAQSKOznyKauwcUQ)
+
 
 # Week 8
 
 - [Code](/lectures/week_8.Rmd)
 - [Code Output](/lectures/week_8.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/M11yFD2dHL4qp2R5fAwEVEpIknhhHWE2g99k-gldeALiRw3_OyC6ZP20VMBVEBJh.AO-IWus9ECuWKlno)
+
 
 # Week 9
 
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/Q7juDjlB8I0mjd0kTRQyC9q2EDz6kxLDdEy2vYGDzzV7QweTLRHN2-YyosE0wDPm.V6S3AzvBt-KrfTHt )
+
 
 # Week 10
 
@@ -72,11 +73,11 @@ knitr::opts_chunk$set(collapse = TRUE,
 - [Code Output](/lectures/week_10.html)
 - [Code 2](/lectures/week_10_part2.Rmd)
 - [Code Output 2](/lectures/week_10_part2.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/8JPVjqiUTR4cg7bAXF58kjYQjh7OwQitpuYD1Yv0g03yEwiEkgc6ts4Rpp1EiCoF.EafJGYUdPHu12dKG )
+
 
 # Week 11
 
-- [Assignment 4 Overview](https://uic.zoom.us/rec/share/-_rf8ZsdHbRmVqzHVyLoCITybgXBREJSDlo5XdXTWN8W77Ptg9_FUoYdprFW5kP2.eNlxysx-2FbvdofA?startTime=1648165578000)
+
 
 # Week 12
 
@@ -91,4 +92,6 @@ knitr::opts_chunk$set(collapse = TRUE,
 - [Code Output 2](/lectures/week_14_2.html)
 - [Code 3](/lectures/week_14_3.Rmd)
 - [Code Output 3](/lectures/week_14_3.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/6Ei1CFo1ZXvezBXUn8OOThE7QmZG25QngeXijXQds63ORDfCKscOCVC7SKq4SzE.ss0gDSvKDeISLIHM )
+
+```
+

@@ -1,0 +1,55 @@
+---
+title: "Coding Warmup 0"
+date: 2023-01-12T00:00:00-00:00
+categories: ["R"]
+tags: ["warmup"]
+publishdate: 2022-01-01T00:00:00-00:00
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, eval=FALSE)
+```
+
+This assignment is ungraded. I encourage you to review the problems to see if (1) you know how to do them or (2) if you know how to google how to do it. If either path forward escapes you, I suggest that you complete this assignment.
+
+
+# Introduction
+
+Welcome to the first coding warmup! The general philosophy of these assignments is as follows:
+
+- they are not graded and are optional
+- you should look at each problem and make sure that you either know how to solve the problem or to figure it out (e.g. google)
+- these primarily focus on general programming concepts and writing good code instead of specific ML/AI ones
+- each assignment will be updated with example solutions before class and we will review as a class
+
+# Part 1
+
+Install [R and RStudio using this guide.](https://rstudio-education.github.io/hopr/starting.html)
+
+# Part 2
+
+Review [Section B R Packages](https://rstudio-education.github.io/hopr/packages2.html)
+
+For this class we will require numerous packages and metapackages (e.g. `tidyverse`). For the first week, we just need `tidyverse` so make sure you have that installed.
+
+# Part 3
+
+Read [Workflow: projects](https://r4ds.had.co.nz/workflow-projects.html).
+
+Based on this, create a centralized location for your work for this class. I would recommend that you create a new R Project in an empty folder for this. This allows us to avoid having to worry about working directories and relative paths since we will always have the same flow. 
+
+
+```{}
+myname_pa470
+|   myname_pa470.Rproj
+|
+└---week 1
+|   |   week1.R
+|   |   week1.Rmd
+|
+└---data
+|   |   mydata.csv
+```
+
+In this example, our R project is established in the folder `myname_pa470` which then also sets our working directory in this folder. If we are working in the script `week1.R` which is in the folder `week 1` (`week 1/week1.R`) and want to read in `mydata.csv`, the path would be `data/mydata.csv` in our script. Simpler right~!
+

@@ -1,15 +1,18 @@
 ---
 title: "Week 1"
-subtitle: "PA 470 Spring 2022"
+subtitle: "PA 470 Spring 2023"
 author: "Eric Langowski"
-output: ioslides_presentation
+output:
+  html_document:
+    df_print: paged
+    theme: sandstone
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## Welcome and Schedule
+# Welcome and Schedule
 
 ### 6:30pm Introductions
 
@@ -22,21 +25,19 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ### 8:00pm Coding Review
 
-## Course Introduction
+# Course Introduction
 
-### Syllabus
+- Syllabus
 
-### [Course Website](https://pa470spring2022.netlify.app/)
+- [Course Website](https://pa470spring2023.netlify.app/)
 
-### Tech 'Stack'
-
-R/RStudio + GitHub/GitHub Desktop
+- Tech 'Stack' R/RStudio + GitHub/GitHub Desktop
 
 ## Course Motivation
 
 What should the relationship between the public sector and ML/AI be? Think of a few words and put them in the chat. 
 
-## Optional Readings {.build}
+## Optional Readings
 
 - [Ask Delphi](https://delphi.allenai.org/?a1=Women+are+better+than+men.)
 - [Crime Prediction Software Promised to Be Free of Biases. New Data Shows It Perpetuates Them](https://themarkup.org/prediction-bias/2021/12/02/crime-prediction-software-promised-to-be-free-of-biases-new-data-shows-it-perpetuates-them)
@@ -61,5 +62,137 @@ What should the relationship between the public sector and ML/AI be? Think of a 
 ## Break
 
 ## Coding Review/EDA
+
+```{r, include=TRUE, echo=TRUE}
+# 1) Read in [Assessor [Archived 05-11-2022] - Residential Modeling Characteristics (Chicago)](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Modeling-/8f9d-wy2d)
+# 2) Explore/describe
+# 3) Count property classes
+# 4) Top Five Classes
+# 5) Keep only townships with Chicago in the name
+# 6) Average rooms by property class
+# 7) lubridate
+# 8) count sales in January 2019
+# 9) count sales by month
+# 10) ggplot2
+# 11) sales by week plot
+# 12) sales price density
+
+```
+
+
+
+
+```{r}
+#test <- read_csv('https://datacatalog.cookcountyil.gov/api/views/8f9d-wy2d/rows.csv?accessType=DOWNLOAD')
+```
+
+
+
+```{r, include=FALSE, eval=FALSE}
+library(tidyverse)
+
+file_loc <- '~/../Downloads/'
+
+ccao <- read_csv(str_glue(file_loc, 
+                          'Cook_County_Assessor_s_Residential_Modeling_Characteristics__Chicago_.csv'))
+
+str(ccao)
+
+# count property classes
+
+ccao %>% count(`Property Class`)
+
+ccao %>% group_by(`Property Class`) %>%
+  summarize(n = n())
+
+ccao %>% count(`Property Class`, sort=TRUE)
+
+# top five classes
+
+ccao %>% count(`Property Class`) %>%
+  slice_max(order_by = `n`, n=5)
+
+
+# keep only townships with Chicago in the name
+
+ccao %>% distinct(`Township Name`)
+
+ccao %>% filter(str_detect(`Township Name`, 'Chicago'))
+
+
+# average rooms by property class
+
+ccao %>% group_by(`Property Class`) %>%
+  summarize(avg_rooms = mean(Rooms),
+            count = n()) %>% view()
+
+# lubridate
+
+library(lubridate)
+
+ccao %>% select(`Sale Date`)
+
+ccao %>% select(contains('Date'))
+
+ccao %>% count(`Sale Date`, sort=TRUE)
+
+ccao <- ccao %>%
+  mutate(
+    `Sale Date` = mdy_hms(`Sale Date`)
+  )
+
+ccao %>% count(`Sale Date`)
+
+# count sales in January 2019
+
+ccao %>% filter(
+  month(`Sale Date`) == 1 & year(`Sale Date`) == 2019
+)
+
+# count sales by month
+
+ccao %>% group_by(
+  month = floor_date(`Sale Date`, 'month')
+) %>% summarize(
+  count = n()
+)
+
+# ggplot2
+library(ggplot2)
+
+theme_set(theme_bw())
+
+# sales by week
+
+gdata <- ccao %>% 
+  filter(!is.na(`Sale Date`)) %>%
+  group_by(week = floor_date(`Sale Date`, 'week')) %>%
+  summarize(count = n())
+
+ggplot(gdata, aes(x=week, y=count)) +
+  geom_point() +
+  geom_line()
+
+ggplot(gdata, aes(x=week, y=count)) +
+  geom_point(size=2) + geom_line(size=1.5) +
+  scale_x_datetime(date_breaks = '6 months', date_labels='%m/%d/%y') +
+  labs(x='Week of', y='Sales', title='Sales in Chicago by Week')
+
+# sale price density
+
+library(scales)
+
+ggplot(ccao, aes(x=`Sale Price`)) +
+  geom_density(fill='navy')
+
+ggplot(ccao, aes(x=`Sale Price`)) +
+  geom_density(fill='navy') +
+  scale_x_log10(labels=dollar_format())
+
+ggplot(ccao, aes(x=`Township Name`, y=`Sale Price`)) +
+  geom_boxplot(fill='navy') +
+  scale_y_log10(labels=dollar_format()) +
+  coord_flip()
+```
 
 

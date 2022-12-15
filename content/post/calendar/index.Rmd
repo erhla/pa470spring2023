@@ -1,6 +1,6 @@
 ---
 title: "Calendar"
-date: 2022-01-13T00:00:00-00:00
+date: 2023-01-12T00:00:00-00:00
 categories: ["R"]
 tags: ["calendar"]
 publishdate: 2022-01-01T00:00:00-00:00
@@ -27,7 +27,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignments and readings should be completed before the week listed, unless otherwise noted.**
 
-## Week 1, 1/13 (online)
+## Week 1, 1/12 (online)
 
 *Introductions, Course Technology Stack, and Review*
 
@@ -37,7 +37,10 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - [Crime Prediction Keeps Society Stuck in the Past](https://www.wired.com/story/crime-prediction-racist-history/)
 - Chapter 6, Data Science for Public Policy (DSPP)
 
-## Week 2, 1/20 (online)
+**Assignment: [Coding Warmup 0](/coding-warmup-0)**
+
+
+## Week 2, 1/19 (online)
 
 *Review, Conceptual Foundations, and Geospatial*
 
@@ -49,7 +52,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignment: [Coding Warmup 1](/coding-warmup-1)**
 
-## Week 3, 1/27 (online)
+## Week 3, 1/26 (online)
 
 *Coding 1*
 
@@ -58,7 +61,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignment: [Coding Warmup 2](/coding-warmup-2)**
 
-## Week 4, 2/3 (online)
+## Week 4, 2/2 (online)
 
 - Chapter 8, DSPP (continued)
 - [tidymodels, Chapters 5-6 Fitting/Linear](https://www.tmwr.org/index.html)
@@ -75,7 +78,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignment: [Reading Response 1, Case Study](/reading-response-1) & [Coding Warmup 3](/coding-warmup-3)**
 
-## Week 5, 2/10 (online)
+## Week 5, 2/9 (online)
 
 *Coding 2*
 
@@ -84,7 +87,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignment: [Detroit Part 1, Due 2/13](/detroit)**
 
-## Week 6, 2/17
+## Week 6, 2/16
 
 - Chapter 9, DSPP
 - [tidymodels, Chapter 9 Effectiveness](https://www.tmwr.org/index.html)
@@ -100,7 +103,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignment: [Response 2, Relationships](/reading-response-2)**
 
-## Week 7, 2/24
+## Week 7, 2/23
 
 *Coding 3*
 
@@ -109,14 +112,14 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignment: [Detroit Part 2](/detroit)**
 
-## Week 8, 3/3
+## Week 8, 3/2
 
 *Coding 4*
 
 - Sections 10.5-10.6, DSPP
 - [tidymodels, Chapter 10-11 Resampling](https://www.tmwr.org/index.html)
 
-## Week 9, 3/10
+## Week 9, 3/9
 
 *Ethical Critiques*
 
@@ -136,7 +139,7 @@ Note: Introduce [final project](/final-project)
 
 **Assignment: [Reading Response 3, Ideals](/reading-response-3)**
 
-## Week 10, 3/17
+## Week 10, 3/16
 
 *Coding 4*
 
@@ -145,11 +148,11 @@ Note: Introduce [final project](/final-project)
 **Assignment: [Detroit Part 3](/detroit)**
 
 
-## Week 11, 3/24
+## Week 11, 3/23
 
 Spring Vacation No Class
 
-## Week 12, 3/31
+## Week 12, 3/30
 
 
 *Detroit Presentations*
@@ -159,7 +162,7 @@ Spring Vacation No Class
 
 **Assignment: [Detroit Final Submission & Presentation](/detroit)**
 
-## Week 13, 4/7
+## Week 13, 4/6
 
 *Coding 5*
 
@@ -169,7 +172,7 @@ Spring Vacation No Class
 
 **Assignment: [Final Project Proposal](/final-project), Due 4/4**
 
-## Week 14, 4/14
+## Week 14, 4/13
 
 *Coding 6*
 
@@ -177,14 +180,14 @@ Spring Vacation No Class
 - [tidymodels, Chapter 16, 19, 20](https://www.tmwr.org/index.html)
 
 
-## Week 15, 4/21
+## Week 15, 4/20
 
 *Public Sector Careers*
 
 - Ch 5 Weapons of Math Destruction, on Blackboard
 - Chapter 15, DSPP
 
-## Week 16, 4/28
+## Week 16, 4/27
 
 *Final Presentations*
 
