@@ -27,7 +27,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignments and readings should be completed before the week listed, unless otherwise noted.**
 
-## Week 1, 1/12 (online)
+## Week 1, 1/12
 
 *Introductions, Course Technology Stack, and Review*
 
@@ -76,7 +76,8 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - [Preparing for the Future of Artifical Intelligence](https://obamawhitehouse.archives.gov/sites/default/files/whitehouse_files/microsites/ostp/NSTC/preparing_for_the_future_of_ai.pdf)
 - [Data Driven Information and the brave new world of smart firefighting](https://www.nfpa.org/-/media/Files/News-and-Research/Resources/Research-Foundation/Current-projects/Smart-FF/SmartFFNFPAJournalDataDriven.ashx)
 
-**Assignment: [Reading Response 1, Case Study](/reading-response-1) & [Coding Warmup 3](/coding-warmup-3)**
+**Assignment: [Reading Response 1, Case Study](/reading-response-1)**
+**Assignment: [Coding Warmup 3](/coding-warmup-3)**
 
 ## Week 5, 2/9 (online)
 
@@ -102,6 +103,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - [REPORT: How to make AI work in government and for people, Case Studies](https://www.centreforpublicimpact.org/insights/how-to-make-ai-work-in-government-and-for-people)
 
 **Assignment: [Response 2, Relationships](/reading-response-2)**
+**Assignment: [Coding Warmup 4](/coding-warmup-4)**
 
 ## Week 7, 2/23
 
@@ -135,7 +137,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - [Algorithmic Risk Assessments Can Alter Human Decision-Making Processes in High-Stakes Government Contexts](https://www.benzevgreen.com/wp-content/uploads/2021/08/21-cscw.pdf)
 
 
-Note: Introduce [final project](/final-project)
+*Introduce Assignment: [Final Project Proposal](/final-project), Due 4/4*
 
 **Assignment: [Reading Response 3, Ideals](/reading-response-3)**
 

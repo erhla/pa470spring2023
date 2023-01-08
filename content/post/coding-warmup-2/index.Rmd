@@ -1,16 +1,16 @@
 ---
 title: "Coding Warmup 2"
-date: 2022-01-27T00:00:00-00:00
+date: 2023-01-26
 categories: ["R"]
 tags: ["warmup"]
-publishdate: 2022-01-01T00:00:00-00:00
+publishdate: 2023-01-19
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE,
                       include = TRUE,
                       message = FALSE,
-                      eval = TRUE)
+                      eval = FALSE)
 ```
 
 This assignment is ungraded. I encourage you to review the problems to see if (1) you know how to do them or (2) if you know how to google how to do it. If either path forward escapes you, I suggest that you complete this assignment.

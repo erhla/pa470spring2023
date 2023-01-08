@@ -1,9 +1,9 @@
 ---
 title: "Coding Warmup 4"
-date: 2022-02-10T00:00:00-00:00
+date: 2023-02-16
 categories: ["R"]
 tags: ["warmup"]
-publishdate: 2022-01-01T00:00:00-00:00
+publishdate: 2023-02-09
 ---
 
 ```{r setup, include=FALSE}

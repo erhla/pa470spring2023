@@ -43,6 +43,5 @@ rsconnect/
 
 files/*
 
-
-static/lectures/*.txt
 static/solutions/database
+static/private/*

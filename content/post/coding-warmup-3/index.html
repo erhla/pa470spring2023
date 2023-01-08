@@ -1,12 +1,11 @@
 ---
 title: "Coding Warmup 3"
-date: 2022-02-03T00:00:00-00:00
+date: 2023-02-02
 categories: ["R"]
 tags: ["warmup"]
-publishdate: 2022-01-01T00:00:00-00:00
+publishdate: 2023-01-26
 ---
 
-<script src="{{< blogdown/postref >}}index_files/header-attrs/header-attrs.js"></script>
 
 
 <p>This assignment is ungraded. I encourage you to review the problems to see if (1) you know how to do them or (2) if you know how to google how to do it. If either path forward escapes you, I suggest that you complete this assignment.</p>
@@ -22,45 +21,17 @@ publishdate: 2022-01-01T00:00:00-00:00
 </ul>
 <pre class="r"><code>
 sale_df &lt;- read_csv(&quot;https://raw.githubusercontent.com/DataScienceForPublicPolicy/diys/main/data/home_sales_nyc.csv&quot;)
-## Rows: 12668 Columns: 15
-## -- Column specification --------------------------------------------------------
-## Delimiter: &quot;,&quot;
-## chr   (2): neighborhood, building.class.category
-## dbl  (12): time.index, borough, zip.code, residential.units, commercial.unit...
-## date  (1): sale.date
-## 
-## i Use `spec()` to retrieve the full column specification for this data.
-## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ggplot(data = sale_df, aes(x = gross.square.feet, y = sale.price)) +
   geom_point(alpha = 0.15,
              size = 1.2,
              colour = &quot;blue&quot;) +
   scale_x_continuous(&quot;Property size (gross square feet)&quot;, labels = scales::comma) +
-  scale_y_continuous(&quot;Sale price (USD)&quot;, labels = scales::comma) </code></pre>
-<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
-<pre class="r"><code>
+  scale_y_continuous(&quot;Sale price (USD)&quot;, labels = scales::comma) 
+
 reg_est &lt;- lm(sale.price ~ gross.square.feet, data = sale_df)
 
-summary(reg_est)
-## 
-## Call:
-## lm(formula = sale.price ~ gross.square.feet, data = sale_df)
-## 
-## Residuals:
-##      Min       1Q   Median       3Q      Max 
-## -1700116  -212264   -44958   138638  8661923 
-## 
-## Coefficients:
-##                     Estimate Std. Error t value Pr(&gt;|t|)    
-## (Intercept)       -42584.389  11534.260  -3.692 0.000223 ***
-## gross.square.feet    466.176      7.097  65.684  &lt; 2e-16 ***
-## ---
-## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
-## 
-## Residual standard error: 463900 on 12666 degrees of freedom
-## Multiple R-squared:  0.2541, Adjusted R-squared:  0.254 
-## F-statistic:  4314 on 1 and 12666 DF,  p-value: &lt; 2.2e-16</code></pre>
+summary(reg_est)</code></pre>
 </div>
 <div id="part-2" class="section level1">
 <h1>Part 2</h1>
@@ -75,7 +46,6 @@ corr_res %&gt;%
   labs(x = NULL, y = &quot;Correlation with sale price&quot;) +
   theme_bw() +
   coord_flip()</code></pre>
-<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-2-1.png" width="672" /></p>
 </div>
 <div id="part-3" class="section level1">
 <h1>Part 3</h1>
@@ -89,11 +59,6 @@ corr_res %&gt;%
 <li>Model 4 (mod4) adds land area</li>
 </ul>
 <pre class="r"><code>library(gridExtra)
-## 
-## Attaching package: &#39;gridExtra&#39;
-## The following object is masked from &#39;package:dplyr&#39;:
-## 
-##     combine
 # Simple regression
 mod1 &lt;- lm(sale.price ~ gross.square.feet,
            data = sale_df)
@@ -166,55 +131,14 @@ base4 &lt;-
   xlim(0, 3000) + ylim(0, 3)
 
 grid.arrange(base1, base2, base3, base4, ncol = 2)
-## Warning: Removed 410 rows containing missing values (geom_point).
-## Warning: Removed 357 rows containing missing values (geom_point).
-## Warning: Removed 410 rows containing missing values (geom_point).
-## Warning: Removed 379 rows containing missing values (geom_point).
-## Warning: Removed 410 rows containing missing values (geom_point).
-## Warning: Removed 370 rows containing missing values (geom_point).
-## Warning: Removed 410 rows containing missing values (geom_point).
-## Warning: Removed 370 rows containing missing values (geom_point).</code></pre>
-<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
-<pre class="r"><code>
+
 broom::glance(mod5)
-## # A tibble: 1 x 12
-##   r.squared adj.r.squared   sigma statistic p.value    df   logLik    AIC    BIC
-##       &lt;dbl&gt;         &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
-## 1     0.489         0.489 384076.      808.       0    15 -180860. 3.62e5 3.62e5
-## # ... with 3 more variables: deviance &lt;dbl&gt;, df.residual &lt;int&gt;, nobs &lt;int&gt;
-broom::tidy(mod5)
-## # A tibble: 16 x 5
-##    term                                 estimate std.error statistic  p.value
-##    &lt;chr&gt;                                   &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
-##  1 (Intercept)                          794057.  192345.      4.13   3.68e- 5
-##  2 gross.square.feet                      1032.      56.4    18.3    9.11e-74
-##  3 factor(borough)2                    -652250.  194929.     -3.35   8.22e- 4
-##  4 factor(borough)3                   -1098488.  192639.     -5.70   1.21e- 8
-##  5 factor(borough)4                    -611850.  192018.     -3.19   1.44e- 3
-##  6 factor(borough)5                    -596887.  192362.     -3.10   1.92e- 3
-##  7 land.square.feet                         37.3      1.86   20.1    3.31e-88
-##  8 age                                    -721.     154.     -4.69   2.71e- 6
-##  9 factor(quarter)2017-10-01               431.   13121.      0.0329 9.74e- 1
-## 10 factor(quarter)2018-01-01              3506.   13441.      0.261  7.94e- 1
-## 11 factor(quarter)2018-04-01              8800.   13278.      0.663  5.07e- 1
-## 12 factor(quarter)2018-07-01             52101.   14444.      3.61   3.11e- 4
-## 13 gross.square.feet:factor(borough)2     -866.      60.4   -14.3    3.18e-46
-## 14 gross.square.feet:factor(borough)3     -291.      57.8    -5.04   4.76e- 7
-## 15 gross.square.feet:factor(borough)4     -761.      57.4   -13.3    7.37e-40
-## 16 gross.square.feet:factor(borough)5     -890.      57.6   -15.4    2.58e-53</code></pre>
+broom::tidy(mod5)</code></pre>
 </div>
 <div id="part-4" class="section level1">
 <h1>Part 4</h1>
 <p>In the class divvy example (see the lectures page for code/files), we had a lot of missing values in our data. We also didn’t have a very rigorous treatment of time/seasonality. Explore how impactful these issues are by creating a few different models and comparing the predictions using the workflows we saw from class in parsnip, yardstick, and broom.</p>
 <pre class="r"><code>divvy_data &lt;- read_csv(&#39;https://github.com/erhla/pa470spring2022/raw/main/static/lectures/week_3_data.csv&#39;)
-## Rows: 8760 Columns: 8
-## -- Column specification --------------------------------------------------------
-## Delimiter: &quot;,&quot;
-## dbl  (7): rides, avg_speed, temp, wind, humidity, solar_rad, interval_rain
-## dttm (1): started_hour
-## 
-## i Use `spec()` to retrieve the full column specification for this data.
-## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 grouped &lt;- rsample::initial_split(divvy_data)
 train &lt;- training(grouped)
@@ -238,22 +162,12 @@ test_preds &lt;- lm_model %&gt;%
 yardstick::mape(test_preds, 
      truth = rides,
      estimate = .pred)
-## # A tibble: 1 x 3
-##   .metric .estimator .estimate
-##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
-## 1 mape    standard        127.
 yardstick::rmse(test_preds, 
      truth = rides,
      estimate = .pred)
-## # A tibble: 1 x 3
-##   .metric .estimator .estimate
-##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
-## 1 rmse    standard        338.
 
 ggplot(test_preds, aes(x=.pred)) +
-  geom_density()
-## Warning: Removed 282 rows containing non-finite values (stat_density).</code></pre>
-<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+  geom_density()</code></pre>
 <pre class="r"><code>divvy_data &lt;- divvy_data %&gt;%
   mutate(
     day = floor_date(started_hour, &#39;day&#39;),
@@ -267,7 +181,6 @@ total_rain &lt;- divvy_data %&gt;% group_by(
 
 divvy_data &lt;- divvy_data %&gt;% left_join(total_rain) %&gt;%
   mutate(rainy_weather = if_else(total_precip &gt; 0, 1, 0))
-## Joining, by = &quot;day&quot;
 
 grouped &lt;- rsample::initial_split(divvy_data)
 train &lt;- training(grouped)
@@ -289,20 +202,11 @@ test_preds &lt;- lm_model %&gt;%
 yardstick::mape(test_preds, 
      truth = rides,
      estimate = .pred)
-## # A tibble: 1 x 3
-##   .metric .estimator .estimate
-##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
-## 1 mape    standard        102.
 yardstick::rmse(test_preds, 
      truth = rides,
      estimate = .pred)
-## # A tibble: 1 x 3
-##   .metric .estimator .estimate
-##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
-## 1 rmse    standard        355.
 
 ggplot(test_preds, aes(x=.pred)) +
   geom_density()
-## Warning: Removed 267 rows containing non-finite values (stat_density).</code></pre>
-<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+</code></pre>
 </div>
