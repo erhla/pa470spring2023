@@ -49,6 +49,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - [sf](https://r-spatial.github.io/sf/)
 - [tidycensus](https://walker-data.com/tidycensus/)
 - [Urban Institute Guide](https://urbaninstitute.github.io/r-at-urban/mapping.html#Introduction)
+- [Racism In, Racism Out](https://www.citizen.org/article/algorithmic-racism/)
 
 **Assignment: [Coding Warmup 1](/coding-warmup-1)**
 
@@ -77,6 +78,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - [Data Driven Information and the brave new world of smart firefighting](https://www.nfpa.org/-/media/Files/News-and-Research/Resources/Research-Foundation/Current-projects/Smart-FF/SmartFFNFPAJournalDataDriven.ashx)
 
 **Assignment: [Reading Response 1, Case Study](/reading-response-1)**
+
 **Assignment: [Coding Warmup 3](/coding-warmup-3)**
 
 ## Week 5, 2/9 (online)
@@ -103,6 +105,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - [REPORT: How to make AI work in government and for people, Case Studies](https://www.centreforpublicimpact.org/insights/how-to-make-ai-work-in-government-and-for-people)
 
 **Assignment: [Response 2, Relationships](/reading-response-2)**
+
 **Assignment: [Coding Warmup 4](/coding-warmup-4)**
 
 ## Week 7, 2/23
@@ -111,6 +114,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 - [Model Evaluation, Model Selection, and Algorithm Selection in Machine Learning](https://arxiv.org/pdf/1811.12808.pdf)
 - Sections 10.0-10.4, DSPP
+- [Cross Validation Reduce, Reuse, Resample](https://mlu-explain.github.io/cross-validation/)
 
 **Assignment: [Detroit Part 2](/detroit)**
 
