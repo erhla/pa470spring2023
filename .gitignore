@@ -45,3 +45,9 @@ files/*
 
 static/solutions/database
 static/private/*
+
+.DS_Store
+Thumbs.db
+.hugo_build.lock
+/public/
+/resources/

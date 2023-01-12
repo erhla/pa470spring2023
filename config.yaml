@@ -1,4 +1,4 @@
-baseurl: https://pa470spring2022.netlify.app/
+baseurl: https://pa470spring2023.netlify.app/
 languageCode: en-us
 title: PA 470
 theme: hugo-lithium
@@ -19,7 +19,7 @@ menu:
     - name: Calendar
       url: /calendar/
     - name: Syllabus
-      url: https://github.com/erhla/pa470spring2022/blob/main/files/PA%20470.docx
+      url: https://github.com/erhla/pa470spring2023/blob/main/files/PA%20470%20Spring%202023.docx
     - name: About
       url: /about/
 params:
