@@ -31,7 +31,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 - [Course Website](https://pa470spring2023.netlify.app/)
 
-- Tech 'Stack' R/RStudio + GitHub/GitHub Desktop
+- Tech 'Stack' R/RStudio/RMarkdown
 
 ## Course Motivation
 
@@ -59,45 +59,37 @@ What should the relationship between the public sector and ML/AI be? Think of a 
 - tidy
   - "the bottleneck in most data analysis is thinking time, not computing time." ~tidyverse manifesto
   
+Review [Coding Warmup 0](https://pa470spring2023.netlify.app/coding-warmup-0/)
+
+Introduce RMarkdown
+  
 ## Break
 
 ## Coding Review/EDA
 
-```{r, include=TRUE, echo=TRUE}
-# 1) Read in [Assessor [Archived 05-11-2022] - Residential Modeling Characteristics (Chicago)](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Modeling-/8f9d-wy2d)
-# 2) Explore/describe
-# 3) Count property classes
-# 4) Top Five Classes
-# 5) Keep only townships with Chicago in the name
-# 6) Average rooms by property class
-# 7) lubridate
-# 8) count sales in January 2019
-# 9) count sales by month
-# 10) ggplot2
-# 11) sales by week plot
-# 12) sales price density
-
-```
+- 1) Read in [Assessor [Archived 05-11-2022] - Residential Modeling Characteristics (Chicago)](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Modeling-/8f9d-wy2d)
 
 
+```{r, eval=FALSE, include=FALSE}
 
-
-```{r}
-#test <- read_csv('https://datacatalog.cookcountyil.gov/api/views/8f9d-wy2d/rows.csv?accessType=DOWNLOAD')
-```
-
-
-
-```{r, include=FALSE, eval=FALSE}
 library(tidyverse)
 
 file_loc <- '~/../Downloads/'
 
 ccao <- read_csv(str_glue(file_loc, 
-                          'Cook_County_Assessor_s_Residential_Modeling_Characteristics__Chicago_.csv'))
+                          'Assessor__Archived_05-11-2022__-_Residential_Modeling_Characteristics__Chicago_.csv'))
 
 str(ccao)
 
+ccao %>% glimpse()
+```
+
+
+- 2) Explore/describe
+- 3) Count property classes
+- 4) Top Five Classes
+
+```{r, eval=FALSE, include=FALSE}
 # count property classes
 
 ccao %>% count(`Property Class`)
@@ -111,8 +103,12 @@ ccao %>% count(`Property Class`, sort=TRUE)
 
 ccao %>% count(`Property Class`) %>%
   slice_max(order_by = `n`, n=5)
+```
 
+- 5) Keep only townships with Chicago in the name
+- 6) Average rooms by property class
 
+```{r, eval=FALSE, include=FALSE}
 # keep only townships with Chicago in the name
 
 ccao %>% distinct(`Township Name`)
@@ -125,7 +121,14 @@ ccao %>% filter(str_detect(`Township Name`, 'Chicago'))
 ccao %>% group_by(`Property Class`) %>%
   summarize(avg_rooms = mean(Rooms),
             count = n()) %>% view()
+```
 
+
+- 7) understand dates with lubridate
+- 8) count sales in January 2019
+- 9) count sales by month
+
+```{r, eval=FALSE, include=FALSE}
 # lubridate
 
 library(lubridate)
@@ -156,7 +159,14 @@ ccao %>% group_by(
 ) %>% summarize(
   count = n()
 )
+```
 
+
+- 10) ggplot2
+- 11) sales by week plot
+- 12) sales price density
+
+```{r, eval=FALSE, include=FALSE}
 # ggplot2
 library(ggplot2)
 
@@ -194,5 +204,4 @@ ggplot(ccao, aes(x=`Township Name`, y=`Sale Price`)) +
   scale_y_log10(labels=dollar_format()) +
   coord_flip()
 ```
-
 
