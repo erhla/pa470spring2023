@@ -165,7 +165,6 @@ Spring Vacation No Class
 
 - [tidymodels, Chapter 18 Understanding Models](https://www.tmwr.org/index.html)
 
-
 **Assignment: [Detroit Final Submission & Presentation](/detroit)**
 
 ## Week 13, 4/6
