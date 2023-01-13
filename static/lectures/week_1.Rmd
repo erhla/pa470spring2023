@@ -6,10 +6,11 @@ output:
   html_document:
     df_print: paged
     theme: sandstone
+    code_folding: hide
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 ```
 
 # Welcome and Schedule
