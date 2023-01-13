@@ -9,7 +9,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ```
 
 # Welcome and Schedule
@@ -61,8 +61,6 @@ What should the relationship between the public sector and ML/AI be? Think of a 
   
 Review [Coding Warmup 0](https://pa470spring2023.netlify.app/coding-warmup-0/)
 
-Introduce RMarkdown
-  
 ## Break
 
 ## Coding Review/EDA
@@ -70,7 +68,7 @@ Introduce RMarkdown
 - 1) Read in [Assessor [Archived 05-11-2022] - Residential Modeling Characteristics (Chicago)](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Modeling-/8f9d-wy2d)
 
 
-```{r, eval=FALSE, include=FALSE}
+```{r, }
 
 library(tidyverse)
 
@@ -89,15 +87,16 @@ ccao %>% glimpse()
 - 3) Count property classes
 - 4) Top Five Classes
 
-```{r, eval=FALSE, include=FALSE}
+```{r, }
 # count property classes
-
 ccao %>% count(`Property Class`)
 
 ccao %>% group_by(`Property Class`) %>%
   summarize(n = n())
 
 ccao %>% count(`Property Class`, sort=TRUE)
+
+count(ccao, `Property Class`)
 
 # top five classes
 
@@ -108,12 +107,13 @@ ccao %>% count(`Property Class`) %>%
 - 5) Keep only townships with Chicago in the name
 - 6) Average rooms by property class
 
-```{r, eval=FALSE, include=FALSE}
+```{r, }
 # keep only townships with Chicago in the name
 
 ccao %>% distinct(`Township Name`)
 
-ccao %>% filter(str_detect(`Township Name`, 'Chicago'))
+ccao %>% filter(str_detect(`Township Name`, '(?<=g)o')) %>%
+  count(`Township Name`)
 
 
 # average rooms by property class
@@ -128,7 +128,7 @@ ccao %>% group_by(`Property Class`) %>%
 - 8) count sales in January 2019
 - 9) count sales by month
 
-```{r, eval=FALSE, include=FALSE}
+```{r, }
 # lubridate
 
 library(lubridate)
@@ -152,6 +152,12 @@ ccao %>% filter(
   month(`Sale Date`) == 1 & year(`Sale Date`) == 2019
 )
 
+ccao %>% mutate(
+  new_date = floor_date(`Sale Date`, 'month')
+) %>% select(new_date) %>% filter(
+  !is.na(new_date),
+  new_date == ymd_hms('2019-01-01 00:00:00'))
+
 # count sales by month
 
 ccao %>% group_by(
@@ -166,7 +172,7 @@ ccao %>% group_by(
 - 11) sales by week plot
 - 12) sales price density
 
-```{r, eval=FALSE, include=FALSE}
+```{r, }
 # ggplot2
 library(ggplot2)
 
@@ -184,7 +190,7 @@ ggplot(gdata, aes(x=week, y=count)) +
   geom_line()
 
 ggplot(gdata, aes(x=week, y=count)) +
-  geom_point(size=2) + geom_line(size=1.5) +
+  geom_point(size=2) + geom_line(linewidth=1.5) +
   scale_x_datetime(date_breaks = '6 months', date_labels='%m/%d/%y') +
   labs(x='Week of', y='Sales', title='Sales in Chicago by Week')
 
