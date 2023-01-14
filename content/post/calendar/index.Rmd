@@ -44,7 +44,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 *Review, Conceptual Foundations, and Geospatial*
 
-- [tidymodels, Chapters 1-2 & Section 3.1](https://www.tmwr.org/index.html)
+- [tidymodels, Chapters 1-2](https://www.tmwr.org/index.html)
 - Chapter 12, DSPP
 - [sf](https://r-spatial.github.io/sf/)
 - [tidycensus](https://walker-data.com/tidycensus/)
