@@ -1,5 +1,7 @@
 ---
 title: "Week 3 Regression and KMeans"
+subtitle: "PA 470 Spring 2023"
+author: "Eric Langowski"
 output:
   html_document:
     toc: true
@@ -7,6 +9,7 @@ output:
     df_print: paged
     theme: sandstone
     number_sections: true
+    code_folding: hide
 ---
 
 ```{r initial_setup, include=FALSE}
@@ -27,7 +30,7 @@ theme_set(theme_bw())
 Let's look at our divvy data. It has been augmeneted and aggregated now so each row is the number of rides in an hour citywide and information on traffic and weather. 
 
 ```{r}
-divvy_data <- read_csv('https://github.com/erhla/pa470spring2022/raw/main/static/lectures/week_3_data.csv')
+divvy_data <- read_csv('https://github.com/erhla/pa470spring2023/raw/main/static/lectures/week_3_data.csv')
 
 
 glimpse(divvy_data)
