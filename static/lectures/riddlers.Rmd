@@ -1,0 +1,251 @@
+---
+title: "538 Riddler Examples"
+author: "Eric Langowski"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+    theme: sandstone
+    code_folding: hide
+---
+
+```{r initial_setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# 1/10/2020 [Riddler Classic](https://fivethirtyeight.com/features/can-you-find-a-number-worth-its-weight-in-letters/)
+By Zach Wissner-Gross
+
+From Leonard Cohen comes a puzzle at the intersection of language and mathematics:
+
+In Jewish study, “Gematria” is an alphanumeric code where words are assigned numerical values based on their letters. We can do the same in English, assigning 1 to the letter A, 2 to the letter B, and so on, up to 26 for the letter Z. The value of a word is then the sum of the values of its letters. For example, RIDDLER has an alphanumeric value of 70, since R + I + D + D + L + E + R becomes 18 + 9 + 4 + 4 + 12 + 5 + 18 = 70.
+
+But what about the values of different numbers themselves, spelled out as words? The number 1 (ONE) has an alphanumeric value of 15 + 14 + 5 = 34, and 2 (TWO) has an alphanumeric value of 20 + 23 + 15 = 58. Both of these values are bigger than the numbers themselves.
+
+Meanwhile, if we look at larger numbers, 1,417 (ONE THOUSAND FOUR HUNDRED SEVENTEEN) has an alphanumeric value of 379, while 3,140,275 (THREE MILLION ONE HUNDRED FORTY THOUSAND TWO HUNDRED SEVENTY FIVE) has an alphanumeric value of 718. These values are much smaller than the numbers themselves.
+
+If we consider all the whole numbers that are less than their alphanumeric value, what is the largest of these numbers?
+
+So we need to accomplish two tasks. Converting numbers into spelled versions and spelled version into scores.
+
+## Spelling Numbers
+
+When we spell numbers, there are a few key patterns.
+
+1. Numbers under 20 have unique representations
+2. Numbers above or equal to 20 and below 100 are represented as *tens place*ty *ones place*
+3. Numbers above or equal to 100 and below 999 are represented as *hundreds place* hundred + *two digit representation from first two rules*
+4. Numbers above or equal to 1000 and below 999999 are represented as *thousands place digit representation from first three rules* thousand + *three digit representation from first three rules* 
+
+and so on...
+
+For #1, let's just make a list.
+
+```{r}
+under_20 <- list('One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+            'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
+            'Seventeen','Eighteen','Nineteen')
+```
+
+Same for #2.
+
+```{r}
+tens <- list('Ten','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety')
+```
+
+So an initial mapping of numbers into word representations for two digit numbers would be this.
+
+```{r}
+two_digits_to_word <- function(number) {
+  if (number < 20) {
+    output <- under_20[number][[1]]
+  } else if (number >= 20 & number < 100) {
+    tens_place <- (number / 10) %% 10
+    ones_place <- number %% 10
+    output <- paste0(tens[tens_place][[1]], under_20[ones_place][[1]])
+  }
+  return(output)
+}
+```
+
+Let's test it out.
+
+```{r}
+two_digits_to_word(19)
+
+two_digits_to_word(25)
+
+#two_digits_to_word(30)
+```
+
+Oops, so even though we don't write out zero, we need to account for it. There's many ways to do this but let's add an empty string to our `under_20` list to represent zero.
+
+
+```{r}
+under_20 <- list('', 'one','two','three','four','five','six','seven','eight','nine',
+            'ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen',
+            'seventeen','eighteen','nineteen')
+
+tens <- list('ten','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety')
+
+two_digits_to_word <- function(number) {
+  if (number < 20) {
+    output <- under_20[number + 1][[1]]
+  } else if (number >= 20 & number < 100) {
+    tens_place <- (number / 10) %% 10
+    ones_place <- number %% 10
+    output <- paste0(tens[tens_place][[1]], under_20[ones_place + 1][[1]])
+  }
+  return(output)
+}
+
+two_digits_to_word(15)
+
+two_digits_to_word(30)
+
+two_digits_to_word(87)
+```
+
+Ok so now #3, now we notice that our previous approach doesn't necessarily work anymore since we need to process the digits of the number instead of using cases based on the number's value. For example, 918 needs to be split into 900 and 18. Let's expand on this.
+
+```{r}
+three_digits_to_word <- function(number) {
+  hundreds_place <- (number %/% 100) %% 10
+  tens_place <- (number %/% 10) %% 10
+  ones_place <- (number %/% 1) %% 10
+  twod_num <- tens_place * 10 + ones_place
+  
+  if (twod_num < 20) { #process tens and ones
+    output <- under_20[twod_num + 1][[1]]
+  } else if (twod_num >= 20 & twod_num < 100) {
+    output <- paste0(tens[tens_place][[1]], under_20[ones_place + 1][[1]])
+  }
+  
+  if (hundreds_place > 0) { #process hundreds
+    output <- paste0(under_20[hundreds_place + 1][[1]], 'hundred', output)
+  }
+  
+  
+  return(output)
+}
+
+three_digits_to_word(3)
+
+three_digits_to_word(15)
+
+three_digits_to_word(30)
+
+three_digits_to_word(87)
+
+three_digits_to_word(897)
+
+three_digits_to_word(900)
+
+three_digits_to_word(917)
+
+```
+
+For #4, we now need to split the number into thousands and hundreds. E.g. 578,530 should be split to 578 THOUSAND and 530. Let's go up to millions as well. Each of these splits can be viewed as a three digit 'block' which is then appended with the appropriate modifier (nothing for 1-3 digit numbers, thousands for 4-6 digit numbers, and millions for 7-9 digit numbers)
+
+```{r}
+three_digits_to_word <- function(number, extra_tag) {
+  hundreds_place <- (number %/% 100) %% 10
+  tens_place <- (number %/% 10) %% 10
+  ones_place <- (number %/% 1) %% 10
+  twod_num <- tens_place * 10 + ones_place
+  
+  if (twod_num < 20) { #process tens and ones
+    output <- under_20[twod_num + 1][[1]]
+  } else if (twod_num >= 20 & twod_num < 100) {
+    output <- paste0(tens[tens_place][[1]], under_20[ones_place + 1][[1]])
+  }
+  if (hundreds_place > 0) { #process hundreds
+    output <- paste0(under_20[hundreds_place + 1][[1]], 'hundred', output)
+  }
+  if (number > 0){
+    output <- paste0(output, extra_tag)
+  }
+
+  return(output)
+}
+
+digits_to_word <- function(number) {
+  block_h <- (number %% 1e3) %/% 1e0
+  block_t <- (number %% 1e6) %/% 1e3
+  block_m <- (number %% 1e9) %/% 1e6
+
+  return(  
+  paste0(
+    three_digits_to_word(block_h, ''),
+    three_digits_to_word(block_t, 'thousand'),
+    three_digits_to_word(block_m, 'million')
+  )
+  )
+  
+}
+
+digits_to_word(3)
+
+digits_to_word(15)
+
+digits_to_word(30)
+
+digits_to_word(87)
+
+digits_to_word(897)
+
+digits_to_word(900)
+
+digits_to_word(917)
+
+digits_to_word(1784)
+
+digits_to_word(784784)
+
+digits_to_word(784784784)
+
+```
+
+
+## Scoring Numbers
+
+A = 1 , B = 2, ... Z = 26
+
+1 -> one -> o, n, e -> 15, 14, 5 -> 34
+
+```{r}
+get_score <- function(number){
+  word <- digits_to_word(number)
+  mini_letters <- unlist(stringr::str_split(word ,""))
+  score <- sum(match(mini_letters,letters))
+  
+  return(score)
+}
+```
+
+## Optimal Number
+
+```{r}
+library(tidyverse)
+lst <- list()
+for(num in 1:100000){
+  lst[[num]] <- get_score(num)
+}
+
+final_scores <- tibble(score=lst) %>% 
+  unnest(cols=c(score)) %>%
+  mutate(num = row_number()) 
+
+final_scores %>%
+  filter(score > num) %>%
+  arrange(desc(num))
+
+ggplot(final_scores %>% filter(num <= 500)) +
+  geom_point(aes(x=num,y=score)) +
+  geom_line(aes(x=num,y=num)) +
+  labs(x = "Number", y = "Score") +
+  geom_vline(xintercept = 279, linetype='dashed') +
+  ylim(c(0,330))
+```
+
