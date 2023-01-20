@@ -13,10 +13,21 @@ publishdate: 2023-01-12
 <h1>Part 1</h1>
 <p>Download <a href="https://datacatalog.cookcountyil.gov/Property-Taxation/Cook-County-Assessor-s-Residential-Modeling-Charac/8f9d-wy2d">Cook County Assessor’s Residential Modeling Characteristics (Chicago)</a>. Load this into R using <code>read_csv</code>. Either set your file directory using a R project or create a variable with the path of the folder the file is located in. Do not use absolute paths!</p>
 <p>Note you can also use urls in <code>read_csv</code> directly.</p>
+<pre class="r"><code>library(tidyverse)
+ccao &lt;- read_csv(&#39;../../../files/Assessor__Archived_05-11-2022__-_Residential_Modeling_Characteristics__Chicago_.zip&#39;)</code></pre>
 </div>
 <div id="part-2" class="section level1">
 <h1>Part 2</h1>
 <p>How many <em>single family</em> homes are included in the data? Out of all the residential properties, what is the most common class? Hint: You may have to look up appropriate Property Classes.</p>
+<pre class="r"><code>#https://prodassets.cookcountyassessor.com/s3fs-public/form_documents/classcode.pdf
+ccao %&gt;% filter(`Property Class` %in% c(202, 203, 204, 205, 206, 207, 208, 209, 210, 234, 278)) %&gt;%
+  nrow()</code></pre>
+<pre><code>## [1] 289388</code></pre>
+<pre class="r"><code>ccao %&gt;% count(`Property Class`) %&gt;% slice_max(n, n=1) #299 is condos</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##   `Property Class`      n
+##              &lt;dbl&gt;  &lt;int&gt;
+## 1              299 236813</code></pre>
 </div>
 <div id="part-3" class="section level1">
 <h1>Part 3</h1>
@@ -28,13 +39,81 @@ publishdate: 2023-01-12
 <li>Number of sales on your birthday (or favorite day)</li>
 <li>Number of sales on Wednesday (or your favorite day of the week)</li>
 </ul>
+<pre class="r"><code>library(lubridate)
+
+ccao %&gt;% select(`Sale Date`)</code></pre>
+<pre><code>## # A tibble: 678,656 x 1
+##    `Sale Date`
+##    &lt;chr&gt;      
+##  1 &lt;NA&gt;       
+##  2 &lt;NA&gt;       
+##  3 &lt;NA&gt;       
+##  4 &lt;NA&gt;       
+##  5 &lt;NA&gt;       
+##  6 &lt;NA&gt;       
+##  7 &lt;NA&gt;       
+##  8 &lt;NA&gt;       
+##  9 &lt;NA&gt;       
+## 10 &lt;NA&gt;       
+## # ... with 678,646 more rows</code></pre>
+<pre class="r"><code>ccao &lt;- ccao %&gt;% mutate(sdate = mdy_hms(`Sale Date`))
+
+ccao %&gt;% filter(month(sdate) == 1) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 6591</code></pre>
+<pre class="r"><code>ccao %&gt;% filter(year(sdate) == 2020) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 24701</code></pre>
+<pre class="r"><code>ccao %&gt;% filter(floor_date(sdate, &#39;month&#39;) == ymd(&#39;2020-01-01&#39;)) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 1813</code></pre>
+<pre class="r"><code>ccao %&gt;% filter(day(sdate) == 23 &amp; month(sdate) == 6) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 67</code></pre>
+<pre class="r"><code>ccao %&gt;% 
+  filter(wday(sdate, label = TRUE) == &#39;Wed&#39;) %&gt;% nrow()</code></pre>
+<pre><code>## [1] 15540</code></pre>
 </div>
 <div id="part-4" class="section level1">
 <h1>Part 4</h1>
 <p>Using <code>ggplot2</code>, make the following plots:</p>
 <ol style="list-style-type: lower-alpha">
-<li><p>Average sale price by number of bedrooms. Use class 203 only and only include values with at least 1000 sales.</p></li>
-<li><p>Sales over time. First, show 2018 to present.</p></li>
-<li><p>March and April 2020 sales. Then, use <code>scale_x_date</code> (or <code>scale_x_datetime</code> if appropriate) on the x-axis to set the date breaks 10 days apart and date labels as month/day of month (e.g. 3/9). Shade in the region of the graph after the pandemic began.</p></li>
+<li>Average sale price by number of bedrooms. Use class 203 only and only include values with at least 1000 sales.</li>
 </ol>
+<pre class="r"><code>library(scales)
+graph_data &lt;- ccao %&gt;% filter(`Property Class` == 203) %&gt;% 
+  group_by(Bedrooms) %&gt;%
+  summarize(avg_sp = mean(`Sale Price`, na.rm=T),
+            count = n()) %&gt;%
+  filter(count &gt;= 1000)
+
+ggplot(graph_data, aes(x=Bedrooms, y=avg_sp)) +
+  geom_bar(stat=&#39;identity&#39;) +
+  scale_y_continuous(labels=dollar) +
+  theme_bw() +
+  labs(y=&#39;Average Sale Price&#39;, title=&#39;Average Sale Price by Bedrooms&#39;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<ol start="2" style="list-style-type: lower-alpha">
+<li>Sales over time. First, show 2018 to present.</li>
+</ol>
+<pre class="r"><code>graph_data2 &lt;- ccao %&gt;% filter(!is.na(sdate)) %&gt;%
+  group_by(sdate = floor_date(sdate, &#39;week&#39;)) %&gt;% 
+  summarize(count = n())
+
+ggplot(graph_data2, aes(x=sdate, y=count)) +
+  geom_line(stat=&#39;identity&#39;) +
+  theme_bw() +
+  labs(x=&#39;Week&#39;, y=&#39;Number of Sales&#39;, title=&#39;Weekly Sales in Chicago&#39;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<ol start="3" style="list-style-type: lower-alpha">
+<li>March and April 2020 sales. Then, use <code>scale_x_date</code> (or <code>scale_x_datetime</code> if appropriate) on the x-axis to set the date breaks 10 days apart and date labels as month/day of month (e.g. 3/9). Shade in the region of the graph after the pandemic began.</li>
+</ol>
+<pre class="r"><code>graph_data3 &lt;- ccao %&gt;% filter(!is.na(sdate)) %&gt;%
+  filter(between(ymd(sdate), ymd(&#39;2020-03-01&#39;), ymd(&#39;2020-04-30&#39;))) %&gt;% #a more natural way to do this
+  group_by(sdate = ymd(floor_date(sdate, &#39;day&#39;))) %&gt;% #using dates is easier instead of datetimes sometimes
+  summarize(count = n())
+
+ggplot(graph_data3, aes(x=sdate, y=count)) +
+  geom_line(stat=&#39;identity&#39;, color=&#39;blue&#39;, size=2) +
+  scale_x_date(date_breaks=&#39;10 days&#39;, date_labels = &#39;%m/%d&#39;) +
+  geom_rect(fill=&#39;green&#39;, alpha=0.005, aes(xmin=ymd(&#39;2020-03-20&#39;), xmax=ymd(&#39;2020-04-30&#39;), ymin=0, ymax=max(graph_data3$count))) +
+  theme_bw() +
+  labs(x=&#39;Day&#39;, y=&#39;Number of Sales&#39;, title=&#39;Daily Sales in Chicago March/April 2020&#39;, subtitle=&#39;Pandemic (shaded region)&#39;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 </div>

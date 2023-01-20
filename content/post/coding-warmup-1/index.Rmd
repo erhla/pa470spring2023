@@ -7,7 +7,7 @@ publishdate: 2023-01-12
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, eval=FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, eval=TRUE)
 ```
 
 This assignment is ungraded. I encourage you to review the problems to see if (1) you know how to do them or (2) if you know how to google how to do it. If either path forward escapes you, I suggest that you complete this assignment.
@@ -20,8 +20,7 @@ Note you can also use urls in `read_csv` directly.
 
 ```{r}
 library(tidyverse)
-file_loc <- '~/../Downloads/'
-ccao <- read_csv(str_glue(file_loc, 'Cook_County_Assessor_s_Residential_Modeling_Characteristics__Chicago_.csv'))
+ccao <- read_csv('../../../files/Assessor__Archived_05-11-2022__-_Residential_Modeling_Characteristics__Chicago_.zip')
 ```
 
 # Part 2
