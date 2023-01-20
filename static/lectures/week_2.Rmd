@@ -102,7 +102,7 @@ Very common are 4326 or 4269 (census)
 
 ## Census Data Hierarchy
 
-[Geographies](https://www2.census.gov/geo/pdfs/reference/geodiagram.pdf){width=70%}
+[Geographies](https://www2.census.gov/geo/pdfs/reference/geodiagram.pdf)
 
 
 
