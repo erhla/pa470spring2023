@@ -24,10 +24,11 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
 theme_set(theme_bw())
 ```
 
+Today we are going to review the traditional base r methods of linear regression and then reapply that framework into a simplified version of the tidymodels pipeline.
 
-# Regressions
+# Regressions Review
 
-Let's look at our divvy data. It has been augmeneted and aggregated now so each row is the number of rides in an hour citywide and information on traffic and weather. 
+Let's look at our divvy data. It has been augmented and aggregated now so each row is the number of rides in an hour citywide and information on traffic and weather. 
 
 ```{r}
 divvy_data <- read_csv('https://github.com/erhla/pa470spring2023/raw/main/static/lectures/week_3_data.csv')
@@ -187,18 +188,27 @@ There are three main metric types in yardstick: **class, class probability, and 
   - truth - numeric
   - estimate - numeric
 
+## Getting Predictions / First Pipeline
 
+Let's construct a basic tidymodels pipeline. This pipeline will build a model to use a 'trained' regression model to *score* the test set. Key components:
 
-## Getting Prediction
+- rsample (splitting data)
+- parsnip (linear_reg, set_engine, set_mode, fit)
+- yardstick (mape, rmse)
+- broom (augment).
 
-A key step with building a model is to use the trained regression model to *score* the test set.
+### Split Data
 
 ```{r}
 grouped <- rsample::initial_split(divvy_data)
 
 train <- training(grouped)
 test  <- testing(grouped)
+```
 
+### Model Framework
+
+```{r}
 lm_model <-
   parsnip::linear_reg() %>%
   set_engine("lm") %>%
@@ -206,13 +216,19 @@ lm_model <-
            factor(wday(started_hour)) +
            factor(month(started_hour)) +
            temp + wind + interval_rain + avg_speed, data=train)
+```
 
+### Predictions
+
+```{r}
 preds <- 
   predict(lm_model, test %>% filter(month(started_hour) >= 5)) 
 
 test_preds <- lm_model %>% 
   augment(test %>% filter(month(started_hour) >=5))
 ```
+
+### yardstick / evaluate model
 
 mape (mean absolute percentage error) - avg pct difference b/t forecast and actual
 rsme (root mean square error) - std of residuals
@@ -280,7 +296,7 @@ tidy(kclust)
 glance(kclust)
 ```
 
-Exploratory clustering
+## Exploratory clustering
 
 While these summaries are useful, they would not have been too difficult to extract out from the data set yourself. The real power comes from combining these analyses with other tools like dplyr.
 
