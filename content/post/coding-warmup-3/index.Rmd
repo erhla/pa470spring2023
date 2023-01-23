@@ -7,22 +7,16 @@ publishdate: 2023-01-26
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(collapse = TRUE,
-                      include = TRUE,
-                      eval = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, eval=FALSE)
+
 
 library(tidyverse)
 library(tidymodels)
 library(lubridate)
 theme_set(theme_bw())
-
 ```
 
 This assignment is ungraded. I encourage you to review the problems to see if (1) you know how to do them or (2) if you know how to google how to do it. If either path forward escapes you, I suggest that you complete this assignment.
-
-# Part 0 (optional)
-
-Accept the invitation to GitHub Classroom [here](https://classroom.github.com/a/vNnoDD6X). Commit your work as you go along.
 
 # Part 1
 
@@ -53,7 +47,10 @@ Reproduce this figure from [tidymodels 3.3](https://www.tmwr.org/base-r.html#tid
 ![](images/corr-plot-1.svg) with the data from Part 1 replacing mpg with sale price for numeric variables.
 
 ```{r}
-corr_res <- map(sale_df %>% select(where(is.numeric), -c(sale.price, borough, zip.code)), cor.test, y=sale_df$sale.price)
+corr_res <- map(sale_df %>% 
+                  select(where(is.numeric), -c(sale.price, borough, zip.code)), 
+                cor.test, 
+                y=sale_df$sale.price)
 corr_res %>% 
   map_dfr(broom::tidy, .id = "predictor") %>% 
   ggplot(aes(x = fct_reorder(predictor, estimate))) + 
@@ -159,14 +156,18 @@ broom::tidy(mod5)
 
 # Part 4
 
-In the class divvy example (see the lectures page for code/files), we had a lot of missing values in our data. We also didn't have a very rigorous treatment of time/seasonality. Explore how impactful these issues are by creating a few different models and comparing the predictions using the workflows we saw from class in parsnip, yardstick, and broom.
+In the class divvy example (see the lectures page for code/files), we had a lot of missing values in our data. We also didn't have a very rigorous treatment of time/seasonality. Explore how impactful these issues are by creating a few different models and comparing the predictions using the workflows we saw from class in rsample (splitting data), parsnip (linear_reg, set_engine, set_mode, fit), yardstick (mape, rmse), and broom (augment).
 
 ```{r}
-divvy_data <- read_csv('https://github.com/erhla/pa470spring2022/raw/main/static/lectures/week_3_data.csv')
+divvy_data <- read_csv('https://github.com/erhla/pa470spring2023/raw/main/static/lectures/week_3_data.csv')
+
+# split data
 
 grouped <- rsample::initial_split(divvy_data)
 train <- training(grouped)
 test  <- testing(grouped)
+
+# create parsnip model
 
 lm_model <-
   parsnip::linear_reg() %>%
@@ -177,11 +178,15 @@ lm_model <-
            factor(month(started_hour)) +
            temp + wind + interval_rain + avg_speed, data=train)
 
+# predict and augment
+
 preds <- 
   predict(lm_model, test %>% filter(month(started_hour) >= 5)) 
 
 test_preds <- lm_model %>% 
   augment(test %>% filter(month(started_hour) >=5))
+
+# evaluate
 
 yardstick::mape(test_preds, 
      truth = rides,
