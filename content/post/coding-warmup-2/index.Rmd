@@ -153,7 +153,7 @@ ggplot(dist1 %>% filter(distance/1609 <= 7.5), aes(x=distance/1609)) +
 
 # Part 4
 
-Grab another variable for the same geographic area and divisions with the intent of exploring correlation between this variable and the one selected in the previous section. Replicate some of the analysis from [Tidy Modeling Sec 3.1](https://www.tmwr.org/base-r.html#an-example).
+Grab another variable for the same geographic area and divisions with the intent of exploring correlation between this variable and the one selected in the part 2. Replicate some of the analysis from [Tidy Modeling Sec 3.1](https://www.tmwr.org/base-r.html#an-example).
 
 ```{r}
 ggplot(joined, aes(x=pct_white, y=medincomeE)) +

@@ -152,9 +152,13 @@ county_pop <- get_decennial("county",
                             variables=c(college_housing_pop = "P5_008N",
                                                   adult_inc = "P5_003N"), 
                             year=2020, 
-                            summary_var="P1_001N")
+                            summary_var="P1_001N",
+                            output = "tidy")
 
 counties <- tigris::counties(cb=TRUE)
+
+?counties
+
 county_census <- counties %>% left_join(county_pop, by=c('GEOID'))
 ```
 
@@ -246,8 +250,8 @@ chicago_tracts_acs <- cook_tracts_acs %>% st_intersection(
 
 
 ```{r}
-mapview(chicago_tracts_acs, alpha=.05, col.regions='green') +
-  mapview(chicago)
+ mapview(chicago) + mapview(chicago_tracts_acs, alpha=.05, col.regions='green')
+ 
 ```
 
 ## ggplot2
@@ -272,18 +276,19 @@ leaflet() %>%
   addTiles() 
 
 leaflet() %>%
-  addTiles() %>% addPolygons(data = chicago_tracts_acs)
+  addTiles() %>% 
+  addPolygons(data = chicago_tracts_acs)
 ```
 
 
-Making pallete
+Making palette
 
 ```{r}
 
 pal1 <-
   colorNumeric(
     palette = "Oranges",
-    domain = chicago_tracts_acs$pct_white,
+    domain = chicago_tracts_acs$White.Share,
     na.color = "Grey"
   )
 ```
@@ -291,7 +296,8 @@ pal1 <-
 
 ```{r}
 leaflet() %>%
-  addTiles() %>% addPolygons(
+  addTiles() %>% 
+  addPolygons(
     data = chicago_tracts_acs,
     fillColor = ~ pal1(White.Share),
     weight = 0.5,
@@ -382,7 +388,8 @@ divvy_joined <- divvy %>% select(ride_id, rideable_type) %>% st_join(
   community_areas %>% select(community)
 )
 
-divvy_counts <- divvy_joined %>% as.data.frame() %>%
+divvy_counts <- divvy_joined %>% 
+  as.data.frame() %>%
   group_by(community) %>%
   summarize(cnt=n(),
             pct_electric = length(ride_id[rideable_type == 'electric_bike']) / cnt)
@@ -449,7 +456,10 @@ ggplot(data = district_sf, aes(fill = n_incidents / 1000)) +
   scale_fill_viridis_c("Number of Incidents (’000)", option = "magma") +
   guides(fill = guide_colourbar(barwidth = 15, barheight = 1)) +
   theme_void() + theme(legend.position = "bottom")
+```
 
+
+```{r}
 district_dist <- st_distance(district_sf)
 
 dist_mat <- st_distance(x = crime_sf,

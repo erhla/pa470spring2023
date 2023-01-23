@@ -21,6 +21,8 @@ Note you can also use urls in `read_csv` directly.
 ```{r}
 library(tidyverse)
 ccao <- read_csv('../../../files/Assessor__Archived_05-11-2022__-_Residential_Modeling_Characteristics__Chicago_.zip')
+
+ccao <- read_csv('files/Assessor__Archived_05-11-2022__-_Residential_Modeling_Characteristics__Chicago_.zip')
 ```
 
 # Part 2
@@ -61,10 +63,8 @@ ccao %>% filter(floor_date(sdate, 'month') == ymd('2020-01-01')) %>% nrow()
 
 ccao %>% filter(day(sdate) == 23 & month(sdate) == 6) %>% nrow()
 
-
 ccao %>% 
   filter(wday(sdate, label = TRUE) == 'Wed') %>% nrow()
-
 ```
 
 # Part 4
