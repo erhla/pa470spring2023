@@ -26,17 +26,13 @@ knitr::opts_chunk$set(collapse = TRUE,
 - [Code](/lectures/week_3.Rmd)
 - [Code Output](/lectures/week_3.html)
 
-```{r eval=FALSE, include=FALSE}
-
-
-
-
 # Week 4
 
 - [Slides](https://docs.google.com/presentation/d/16lLXLg_2G5H9G8cb4YM4XXmTPXNCpK6EvkXfvTZFdoM/edit?usp=sharing)
 - [Code](/lectures/week_4.Rmd)
 - [Code Output](/lectures/week_4.html)
-- [Zoom, requires log-in](https://uic.zoom.us/rec/share/8pCkSYy7CVl4PflrgX-B6-4ATmWWSxwaJiWzNcWhjdYt2xBRvYQ8Q8mx5H6MfoGX.JBWiNXOmxBOfX3oa)
+
+```{r eval=FALSE, include=FALSE}
 
 # Week 5
 

@@ -7,6 +7,7 @@ output:
     df_print: paged
     theme: sandstone
     number_sections: true
+    code_folding: hide
 ---
 
 ```{r initial_setup, include=FALSE}
@@ -15,15 +16,14 @@ library(tidymodels)
 library(lubridate)
 library(kableExtra)
 library(scales)
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
-                      eval= TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 theme_set(theme_bw())
 ```
 
 # Tidymodels
 
-Last week we looked at broom (tidy, glance, augment), rsample (splitting data), parsnip (specifying models), and yardstick (evaluating models). For a brief review look at the solution to coding warmup 3 part 4.
+Last week we looked at the tidymodels pipeline for the first time. broom (tidy, glance, augment), rsample (splitting data), parsnip (specifying models), and yardstick (evaluating models). For a brief review look at the solution to coding warmup 3 part 4.
 
 Some more helpful tools.
 
@@ -114,8 +114,15 @@ We can predict a class metric or a class probability metric (recall from yardsti
 
 ```{r}
 test_preds %>% count(Class, .pred_class)
-ggplot(test_preds, aes(x=.pred_good, color=Class)) + geom_density()
+```
 
+
+```{r}
+ggplot(test_preds, aes(x=.pred_good, color=Class)) + geom_density()
+```
+
+
+```{r}
 test_preds %>% group_by(Class) %>% summarize(mean(.pred_good), median(.pred_good))
 
 roc_auc(test_preds,
