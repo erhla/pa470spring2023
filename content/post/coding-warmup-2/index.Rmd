@@ -7,7 +7,7 @@ publishdate: 2023-01-19
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, eval= FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, eval=TRUE)
 
 ```
 
@@ -51,7 +51,7 @@ il21 <- il21 %>% mutate(
 iltracts <- tigris::tracts(state='17', year=2021, cb=TRUE)
 
 joined <- iltracts %>% left_join(
-  il19 %>% select(GEOID, pct_white, totalpopE, medincomeE)
+  il21 %>% select(GEOID, pct_white, totalpopE, medincomeE)
 ) %>% filter(COUNTYFP == '031') #cook
 
 ### make labels
@@ -133,8 +133,8 @@ divvy <-
 
 st_crs(divvy) <- 4326
 
-divvy %>% slice_sample(n=100) %>%
-  st_distance()
+# divvy %>% slice_sample(n=100) %>%
+#   st_distance()
 
 dist1 <- divvy %>% as.data.frame() %>%
   filter(!is.na(start_lng)) %>%
