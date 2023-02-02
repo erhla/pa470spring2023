@@ -88,7 +88,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - [Predictive Tools for Public Safety](https://datasmart.ash.harvard.edu/news/article/predictive-tools-for-public-safety-506)
 - [tidymodels, Chapter 7-8 Workflow & Recipies](https://www.tmwr.org/index.html)
 
-**Assignment: [Detroit Part 1, Due 2/13](/detroit)**
+**Assignment: [Detroit Part 1, Due 2/13](/detroit-part-1)**
 
 ## Week 6, 2/16
 
@@ -116,7 +116,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - Sections 10.0-10.4, DSPP
 - [Cross Validation Reduce, Reuse, Resample](https://mlu-explain.github.io/cross-validation/)
 
-**Assignment: [Detroit Part 2](/detroit)**
+**Assignment: [Detroit Part 2](/detroit-part-2)**
 
 ## Week 8, 3/2
 
@@ -151,7 +151,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 - [tidymodels, Tuning Chapter 12-15](https://www.tmwr.org/index.html)
 
-**Assignment: [Detroit Part 3](/detroit)**
+**Assignment: [Detroit Part 3](/detroit-part-3)**
 
 
 ## Week 11, 3/23
@@ -165,7 +165,7 @@ Spring Vacation No Class
 
 - [tidymodels, Chapter 18 Understanding Models](https://www.tmwr.org/index.html)
 
-**Assignment: [Detroit Final Submission & Presentation](/detroit)**
+**Assignment: [Detroit Final Submission & Presentation](/detroit-part-4)**
 
 ## Week 13, 4/6
 

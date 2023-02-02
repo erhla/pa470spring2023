@@ -1,0 +1,106 @@
+---
+title: "Detroit Part 3"
+date: 2023-03-16
+categories: ["R"]
+tags: ["detroit"]
+publishdate: 2023-03-09
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE,
+                      include = FALSE)
+```
+
+## Assignment
+
+Instead of traditional problem sets, this course has a single four part assignment where you will build upon your previous work each week with new material from the course. You will explore property assessment in Detroit, Michigan and create an assessment model. After the completion of the assignment, you will wrap your model into a report which analyzes the effectiveness of your model based on the ethical and other frameworks from class and make a brief presentation to the class.
+
+## Submissions
+
+Each week you will submit two files on blackboard, your code/Rmd file and the knitted output of your code. Blackboard will not accept html files so you must zip the files together.
+
+## Part 1 (Due 2/13, 11:59pn)
+
+You have been tasked with undertaking a multi-part analysis of homes in Detroit, Michigan. You are provided with a database to facilitate this analysis. This database was constructed from the [Detroit Open Data portal](https://data.detroitmi.gov) and numerous FOIA requests. More information is included in the database section below. Note that the database must be downloaded.
+
+
+### R Markdown Requirements
+
+Please include `code_folding: hide` as a yaml option and `knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)` in your setup chunk so that your code can be seen in your knitted output but is initially hidden.
+
+
+### dbplyr
+
+Starter code, replace with path.
+
+```{}
+con <- DBI::dbConnect(RSQLite::SQLite(), "PATH")
+
+# sales tbl
+
+dplyr::tbl(con, 'sales')
+
+# convert to tibble
+#dplyr::tbl(con, 'sales') %>% dplyr::collect()
+
+# sql query
+
+dplyr::tbl(con, 'sales') %>% count(year(sale_date))
+
+#dplyr::tbl(con, 'sales') %>% count(year(sale_date)) %>% show_query()
+```
+
+### Database
+
+I have provided data via a sqlite database. It can be found on [OneDrive](https://uic365-my.sharepoint.com/:u:/g/personal/erhlango_uic_edu/EaeVtM_p_eVEjzAHixZ5YrQBAUpI2nPtvgXcpYoJr1ZT3Q?e=RqbF0h).
+
+Five tables are provided:
+
+#### assessments
+
+Built from numerous FOIA requests, this table includes information on assessments for residential properties from 2011 to 2021. 2022 tentative assessments are also included.
+
+#### blight
+
+See: https://data.detroitmi.gov/datasets/blight-violations/explore
+
+#### parcels
+
+See: https://data.detroitmi.gov/datasets/parcels-2/explore
+
+#### parcels_historic
+
+Parcel data from 2009
+
+#### sales
+
+See: https://data.detroitmi.gov/datasets/property-sales-1/explore
+
+#### foreclosures
+
+See: https://portal.datadrivendetroit.org/datasets/detroit-tax-foreclosures-2002-2019/about
+
+### Assignment
+
+
+- Section A: Conduct an exploratory data analysis of homes in Detroit. Offer an overview of relevant trends in the data and data quality issues. Contextualize your analysis with [key](https://scholarship.law.uci.edu/ucilr/vol9/iss4/3/) [literature](https://harris.uchicago.edu/files/evalrespropertytaxasdetroit20162018.pdf) on properties in Detroit.
+- Section B: Use [`cmfproperty`](https://erhla.github.io/cmfproperty/index.html) to conduct a sales ratio study across the relevant time period. Note that `cmfproperty` is designed to produce Rmarkdown reports but [use the documentation](https://erhla.github.io/cmfproperty/articles/cmfproperty.html) and insert relevant graphs/figures into your report. Look to make this reproducible since you'll need these methods to analyze your assessment model later on. Detroit has many sales which are not arm's length (sold at fair market value) so some sales should be excluded, but which ones?
+- Section C: Explore trends and relationships with property sales using simple regressions
+- Section D: Explore trends and relationships with foreclosures using simple regressions
+
+## Grading Overview
+
+For each assignment, you will be graded on substantial completion of the assignment (demonstrated by an attempt of all parts). When submitting parts 2, 3, and 4, you will be additionally graded on your incorporation of feedback, new concepts from the course, or the correction of any flagged issues.
+
+The assignment will culminate in a final submission of code/report and presentation. Code will be graded based on reproducibility, conceptual understanding, and accuracy. The report will be an Rmarkdown file which knits together graphs, tables, and ethical frameworks. It should be concise (include only relevant information from Parts 1-4). This report will be used to give a five minute presentation to the class on your model and ethical/technical issues with Detroit property assessment.
+
+| Date   | Points | Category                                     | Notes                                                                           |
+|-----------|-----------|----------------------------------------------|-------------------------------------------|
+| 13-Feb | 5      | Substantial Completion (attempted all parts) | Part 1 Due                                                                      |
+| 23-Feb | 5      | Substantial Completion (attempted all parts) | Part 2 Due                                                                      |
+| 23-Feb | 5      | Incorporation of Feedback/New Concepts       | From Part 1                                                                     |                                                         |
+| 16-Mar | 10      | Substantial Completion (attempted all parts) | Part 3 Due                                                                      |
+| 16-Mar | 10      | Incorporation of Feedback/New Concepts       | From Part 2                                                                     |
+| 30-Mar | 30     | Final Code                                   | Reproducible (10), Concepts (10), Accurate (10)                                 |
+| 30-Mar | 20     | Final Report                                 | Via Rmarkdown HTML, contextualized analysis and ethics |
+| 30-Mar | 15     | Final Presentation                           | 3-5 minute presentation on model and insights                                     |

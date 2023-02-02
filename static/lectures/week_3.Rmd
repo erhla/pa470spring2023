@@ -230,7 +230,7 @@ test_preds <- lm_model %>%
 ### yardstick / evaluate model
 
 mape (mean absolute percentage error) - avg pct difference b/t forecast and actual
-rsme (root mean square error) - std of residuals
+rmse (root mean square error) - std of residuals
 
 ```{r}
 yardstick::mape(test_preds, 
