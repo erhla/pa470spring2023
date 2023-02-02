@@ -7,7 +7,7 @@ publishdate: 2023-01-26
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, eval=FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, eval=TRUE)
 
 
 library(tidyverse)
