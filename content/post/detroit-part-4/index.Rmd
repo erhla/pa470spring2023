@@ -19,74 +19,131 @@ Instead of traditional problem sets, this course has a single four part assignme
 
 Each week you will submit two files on blackboard, your code/Rmd file and the knitted output of your code. Blackboard will not accept html files so you must zip the files together.
 
-## Part 1 (Due 2/13, 11:59pn)
+## Final Submission (Due 3/31)
 
-You have been tasked with undertaking a multi-part analysis of homes in Detroit, Michigan. You are provided with a database to facilitate this analysis. This database was constructed from the [Detroit Open Data portal](https://data.detroitmi.gov) and numerous FOIA requests. More information is included in the database section below. Note that the database must be downloaded.
+Create `final_report.Rmd` in the reports folder, copying the yaml/framework from `part_1.Rmd`.
 
+Bring together your previous submissions into one cohesive report. This report should offer a brief overview of the problem (assessment), general trends on properties, your model, why your model is better than other models, and any technical or ethical critiques. 
 
-### R Markdown Requirements
+Your final submission will build upon your part 3 submission by 'switching out' the model you use and adding a conclusion.
 
-Please include `code_folding: hide` as a yaml option and `knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)` in your setup chunk so that your code can be seen in your knitted output but is initially hidden.
+### Part A, New Assessment Models
 
+Mirror Section 15.3 from the textbook for your assessment model only!
+  
+  - Create a `workflow_set()` of three different model types. You may choose any which are comparable with `tidymodels`. Suggested models and tuning parameters below. I **encourage** you to consider using one model not from this list, but that is optional.
 
-### dbplyr
+```
+linear_reg_spec <- 
+  linear_reg(penalty = tune(), mixture = tune()) %>% 
+  set_engine("glmnet")
 
-Starter code, replace with path.
+rf_spec <- 
+  rand_forest(mtry = tune(), min_n = tune(), trees = 250) %>% 
+  set_engine("ranger") %>% 
+  set_mode("regression")
 
-```{}
-con <- DBI::dbConnect(RSQLite::SQLite(), "PATH")
+xgb_spec <- 
+  boost_tree(tree_depth = tune(), learn_rate = tune(), loss_reduction = tune(), 
+             min_n = tune(), sample_size = tune(), trees = tune()) %>% 
+  set_engine("xgboost") %>% 
+  set_mode("regression")
 
-# sales tbl
-
-dplyr::tbl(con, 'sales')
-
-# convert to tibble
-#dplyr::tbl(con, 'sales') %>% dplyr::collect()
-
-# sql query
-
-dplyr::tbl(con, 'sales') %>% count(year(sale_date))
-
-#dplyr::tbl(con, 'sales') %>% count(year(sale_date)) %>% show_query()
+my_set <- workflow_set(
+  preproc = list(name_for_your_recipie = your_recipie),
+  models = list(linear_reg = linear_reg_spec, random_forest = rf_spec, boosted = xgb_spec)
+)
 ```
 
-### Database
+The textbook applies slightly different preprocessing steps to these models, but they should work reasonably well with your current recipe. If you have any compatability issues, I recommend starting with a simple recipe and adding things back one at a time.
 
-I have provided data via a sqlite database. It can be found on [OneDrive](https://uic365-my.sharepoint.com/:u:/g/personal/erhlango_uic_edu/EaeVtM_p_eVEjzAHixZ5YrQBAUpI2nPtvgXcpYoJr1ZT3Q?e=RqbF0h).
+- Now, apply `workflow_map()` to your `workflow_set()`. You should resample your testing data and create a small grid. Please use at least 3 resamples and a grid of at least 5. This may take a long time (10+ minutes). I recommend starting very small and gradually increasing your resamples/grid. Note that I've included verbose = TRUE here to help you debug, please do not include this output in your final project.
 
-Five tables are provided:
+```
+grid_ctrl <-
+   control_grid(
+      save_pred = FALSE,
+      save_workflow = FALSE
+   )
 
-#### assessments
+grid_results <-
+   my_set %>%
+   workflow_map(
+      seed = 1503,
+      resamples = your_resamples,
+      grid = 5,
+      control = grid_ctrl,
+      verbose = TRUE
+   )
+   
+```
 
-Built from numerous FOIA requests, this table includes information on assessments for residential properties from 2011 to 2021. 2022 tentative assessments are also included.
+- Now, use `rank_results` on your selected performance metric and `autoplot` to replicate figure 15.1. Does one model perform significantly better than others? Select what you feel is the best by finalizing your model (see Section 15.5).
 
-#### blight
+```
+best_results <- 
+   grid_results %>% 
+   extract_workflow_set_result("best model type name") %>% 
+   select_best(metric = "your metric")
+best_results
 
-See: https://data.detroitmi.gov/datasets/blight-violations/explore
+best_results_fit <- 
+   grid_results %>% 
+   extract_workflow("best model type name") %>% 
+   finalize_workflow(best_results) %>% 
+   last_fit(split = your_rsample_data) #this is the output of rsample::initial_time_split() or rsample::initial_split()
+```
 
-#### parcels
+- Consider making a simple visualization of predicted / observed values from your best model similar to Figure 15.5
 
-See: https://data.detroitmi.gov/datasets/parcels-2/explore
+```
+best_results_fit %>% 
+   collect_predictions() %>% 
+   ggplot(aes(x = target_variable, y = .pred)) + 
+   geom_abline(color = "gray50", lty = 2) + 
+   geom_point(alpha = 0.5) + 
+   coord_obs_pred() + 
+   labs(x = "observed", y = "predicted")
+```
 
-#### parcels_historic
+### Part B, Hyperparameter Exploration for Classification
 
-Parcel data from 2009
+Mirroring Section 14.2.3, take your current workflow and use `tune_bayes()` to create a small tuning grid for your classification model. You will need to:
 
-#### sales
+- Identify appropriate hyperparameters to be tuned for your chosen model type and set them equal to `tune()` in your workflow (note: do not include `mtry` in your tuning grid)
+- Manually create a start_grid and evaluate your workflow to create initial values for `tune_bayes()`
 
-See: https://data.detroitmi.gov/datasets/property-sales-1/explore
+```
+initial_vals <- your_workflow %>%
+  tune_grid(
+    resampled_data,
+    grid = 4,
+    metrics = your_metric_set,
+  )
+```
 
-#### foreclosures
+- Run a bayes search
 
-See: https://portal.datadrivendetroit.org/datasets/detroit-tax-foreclosures-2002-2019/about
+```
+ctrl <- control_bayes(verbose = TRUE)
 
-### Assignment
+your_search <- 
+  your_workflow %>%
+  tune_bayes(
+    resamples = ...,
+    metrics = ...,
+    initial = initial_vals, #note you may simply pass a number here e.g. 6 for a random search
+    iter = 25,
+    control = ctrl
+  )
+```
+- Call `show_best` and finalize your model
 
+### Part C, Conclusion & Presentation
 
-- Section A: Conduct an exploratory data analysis of homes in Detroit. Offer an overview of relevant trends in the data and data quality issues. Contextualize your analysis with [key](https://scholarship.law.uci.edu/ucilr/vol9/iss4/3/) [literature](https://harris.uchicago.edu/files/evalrespropertytaxasdetroit20162018.pdf) on properties in Detroit.
-- Section B: Use [`cmfproperty`](https://erhla.github.io/cmfproperty/index.html) to conduct a sales ratio study across the relevant time period. Note that `cmfproperty` is designed to produce Rmarkdown reports but [use the documentation](https://erhla.github.io/cmfproperty/articles/cmfproperty.html) and insert relevant graphs/figures into your report. Look to make this reproducible since you'll need these methods to analyze your assessment model later on. Detroit has many sales which are not arm's length (sold at fair market value) so some sales should be excluded, but which ones?
-- Section C: Explore trends and relationships with property sales using simple regressions
-- Section D: Explore trends and relationships with foreclosures using simple regressions
+Write a four paragraph conclusion to your file. Include information on your model type, its performance on your chosen objective function, any ethical or implementation issues (e.g. should Detroit use your model?).
+
+In class on the 31st, everyone will give a brief presentation on their work. You may present your knitted Rmd file or pull some of your graphs into a slide deck. Your presentation should be at most five minutes. Broadly look to answer if your model should be implemented by discussing the information in your conclusion and assignment.
 
 ## Grading Overview
 

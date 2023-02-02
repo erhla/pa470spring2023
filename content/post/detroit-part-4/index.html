@@ -16,68 +16,116 @@ publishdate: 2023-03-23
 <h2>Submissions</h2>
 <p>Each week you will submit two files on blackboard, your code/Rmd file and the knitted output of your code. Blackboard will not accept html files so you must zip the files together.</p>
 </div>
-<div id="part-1-due-213-1159pn" class="section level2">
-<h2>Part 1 (Due 2/13, 11:59pn)</h2>
-<p>You have been tasked with undertaking a multi-part analysis of homes in Detroit, Michigan. You are provided with a database to facilitate this analysis. This database was constructed from the <a href="https://data.detroitmi.gov">Detroit Open Data portal</a> and numerous FOIA requests. More information is included in the database section below. Note that the database must be downloaded.</p>
-<div id="r-markdown-requirements" class="section level3">
-<h3>R Markdown Requirements</h3>
-<p>Please include <code>code_folding: hide</code> as a yaml option and <code>knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)</code> in your setup chunk so that your code can be seen in your knitted output but is initially hidden.</p>
-</div>
-<div id="dbplyr" class="section level3">
-<h3>dbplyr</h3>
-<p>Starter code, replace with path.</p>
-<pre><code>con &lt;- DBI::dbConnect(RSQLite::SQLite(), &quot;PATH&quot;)
-
-# sales tbl
-
-dplyr::tbl(con, &#39;sales&#39;)
-
-# convert to tibble
-#dplyr::tbl(con, &#39;sales&#39;) %&gt;% dplyr::collect()
-
-# sql query
-
-dplyr::tbl(con, &#39;sales&#39;) %&gt;% count(year(sale_date))
-
-#dplyr::tbl(con, &#39;sales&#39;) %&gt;% count(year(sale_date)) %&gt;% show_query()</code></pre>
-</div>
-<div id="database" class="section level3">
-<h3>Database</h3>
-<p>I have provided data via a sqlite database. It can be found on <a href="https://uic365-my.sharepoint.com/:u:/g/personal/erhlango_uic_edu/EaeVtM_p_eVEjzAHixZ5YrQBAUpI2nPtvgXcpYoJr1ZT3Q?e=RqbF0h">OneDrive</a>.</p>
-<p>Five tables are provided:</p>
-<div id="assessments" class="section level4">
-<h4>assessments</h4>
-<p>Built from numerous FOIA requests, this table includes information on assessments for residential properties from 2011 to 2021. 2022 tentative assessments are also included.</p>
-</div>
-<div id="blight" class="section level4">
-<h4>blight</h4>
-<p>See: <a href="https://data.detroitmi.gov/datasets/blight-violations/explore" class="uri">https://data.detroitmi.gov/datasets/blight-violations/explore</a></p>
-</div>
-<div id="parcels" class="section level4">
-<h4>parcels</h4>
-<p>See: <a href="https://data.detroitmi.gov/datasets/parcels-2/explore" class="uri">https://data.detroitmi.gov/datasets/parcels-2/explore</a></p>
-</div>
-<div id="parcels_historic" class="section level4">
-<h4>parcels_historic</h4>
-<p>Parcel data from 2009</p>
-</div>
-<div id="sales" class="section level4">
-<h4>sales</h4>
-<p>See: <a href="https://data.detroitmi.gov/datasets/property-sales-1/explore" class="uri">https://data.detroitmi.gov/datasets/property-sales-1/explore</a></p>
-</div>
-<div id="foreclosures" class="section level4">
-<h4>foreclosures</h4>
-<p>See: <a href="https://portal.datadrivendetroit.org/datasets/detroit-tax-foreclosures-2002-2019/about" class="uri">https://portal.datadrivendetroit.org/datasets/detroit-tax-foreclosures-2002-2019/about</a></p>
-</div>
-</div>
-<div id="assignment-1" class="section level3">
-<h3>Assignment</h3>
+<div id="final-submission-due-331" class="section level2">
+<h2>Final Submission (Due 3/31)</h2>
+<p>Create <code>final_report.Rmd</code> in the reports folder, copying the yaml/framework from <code>part_1.Rmd</code>.</p>
+<p>Bring together your previous submissions into one cohesive report. This report should offer a brief overview of the problem (assessment), general trends on properties, your model, why your model is better than other models, and any technical or ethical critiques.</p>
+<p>Your final submission will build upon your part 3 submission by ‘switching out’ the model you use and adding a conclusion.</p>
+<div id="part-a-new-assessment-models" class="section level3">
+<h3>Part A, New Assessment Models</h3>
+<p>Mirror Section 15.3 from the textbook for your assessment model only!</p>
 <ul>
-<li>Section A: Conduct an exploratory data analysis of homes in Detroit. Offer an overview of relevant trends in the data and data quality issues. Contextualize your analysis with <a href="https://scholarship.law.uci.edu/ucilr/vol9/iss4/3/">key</a> <a href="https://harris.uchicago.edu/files/evalrespropertytaxasdetroit20162018.pdf">literature</a> on properties in Detroit.</li>
-<li>Section B: Use <a href="https://erhla.github.io/cmfproperty/index.html"><code>cmfproperty</code></a> to conduct a sales ratio study across the relevant time period. Note that <code>cmfproperty</code> is designed to produce Rmarkdown reports but <a href="https://erhla.github.io/cmfproperty/articles/cmfproperty.html">use the documentation</a> and insert relevant graphs/figures into your report. Look to make this reproducible since you’ll need these methods to analyze your assessment model later on. Detroit has many sales which are not arm’s length (sold at fair market value) so some sales should be excluded, but which ones?</li>
-<li>Section C: Explore trends and relationships with property sales using simple regressions</li>
-<li>Section D: Explore trends and relationships with foreclosures using simple regressions</li>
+<li>Create a <code>workflow_set()</code> of three different model types. You may choose any which are comparable with <code>tidymodels</code>. Suggested models and tuning parameters below. I <strong>encourage</strong> you to consider using one model not from this list, but that is optional.</li>
 </ul>
+<pre><code>linear_reg_spec &lt;- 
+  linear_reg(penalty = tune(), mixture = tune()) %&gt;% 
+  set_engine(&quot;glmnet&quot;)
+
+rf_spec &lt;- 
+  rand_forest(mtry = tune(), min_n = tune(), trees = 250) %&gt;% 
+  set_engine(&quot;ranger&quot;) %&gt;% 
+  set_mode(&quot;regression&quot;)
+
+xgb_spec &lt;- 
+  boost_tree(tree_depth = tune(), learn_rate = tune(), loss_reduction = tune(), 
+             min_n = tune(), sample_size = tune(), trees = tune()) %&gt;% 
+  set_engine(&quot;xgboost&quot;) %&gt;% 
+  set_mode(&quot;regression&quot;)
+
+my_set &lt;- workflow_set(
+  preproc = list(name_for_your_recipie = your_recipie),
+  models = list(linear_reg = linear_reg_spec, random_forest = rf_spec, boosted = xgb_spec)
+)</code></pre>
+<p>The textbook applies slightly different preprocessing steps to these models, but they should work reasonably well with your current recipe. If you have any compatability issues, I recommend starting with a simple recipe and adding things back one at a time.</p>
+<ul>
+<li>Now, apply <code>workflow_map()</code> to your <code>workflow_set()</code>. You should resample your testing data and create a small grid. Please use at least 3 resamples and a grid of at least 5. This may take a long time (10+ minutes). I recommend starting very small and gradually increasing your resamples/grid. Note that I’ve included verbose = TRUE here to help you debug, please do not include this output in your final project.</li>
+</ul>
+<pre><code>grid_ctrl &lt;-
+   control_grid(
+      save_pred = FALSE,
+      save_workflow = FALSE
+   )
+
+grid_results &lt;-
+   my_set %&gt;%
+   workflow_map(
+      seed = 1503,
+      resamples = your_resamples,
+      grid = 5,
+      control = grid_ctrl,
+      verbose = TRUE
+   )
+   </code></pre>
+<ul>
+<li>Now, use <code>rank_results</code> on your selected performance metric and <code>autoplot</code> to replicate figure 15.1. Does one model perform significantly better than others? Select what you feel is the best by finalizing your model (see Section 15.5).</li>
+</ul>
+<pre><code>best_results &lt;- 
+   grid_results %&gt;% 
+   extract_workflow_set_result(&quot;best model type name&quot;) %&gt;% 
+   select_best(metric = &quot;your metric&quot;)
+best_results
+
+best_results_fit &lt;- 
+   grid_results %&gt;% 
+   extract_workflow(&quot;best model type name&quot;) %&gt;% 
+   finalize_workflow(best_results) %&gt;% 
+   last_fit(split = your_rsample_data) #this is the output of rsample::initial_time_split() or rsample::initial_split()</code></pre>
+<ul>
+<li>Consider making a simple visualization of predicted / observed values from your best model similar to Figure 15.5</li>
+</ul>
+<pre><code>best_results_fit %&gt;% 
+   collect_predictions() %&gt;% 
+   ggplot(aes(x = target_variable, y = .pred)) + 
+   geom_abline(color = &quot;gray50&quot;, lty = 2) + 
+   geom_point(alpha = 0.5) + 
+   coord_obs_pred() + 
+   labs(x = &quot;observed&quot;, y = &quot;predicted&quot;)</code></pre>
+</div>
+<div id="part-b-hyperparameter-exploration-for-classification" class="section level3">
+<h3>Part B, Hyperparameter Exploration for Classification</h3>
+<p>Mirroring Section 14.2.3, take your current workflow and use <code>tune_bayes()</code> to create a small tuning grid for your classification model. You will need to:</p>
+<ul>
+<li>Identify appropriate hyperparameters to be tuned for your chosen model type and set them equal to <code>tune()</code> in your workflow (note: do not include <code>mtry</code> in your tuning grid)</li>
+<li>Manually create a start_grid and evaluate your workflow to create initial values for <code>tune_bayes()</code></li>
+</ul>
+<pre><code>initial_vals &lt;- your_workflow %&gt;%
+  tune_grid(
+    resampled_data,
+    grid = 4,
+    metrics = your_metric_set,
+  )</code></pre>
+<ul>
+<li>Run a bayes search</li>
+</ul>
+<pre><code>ctrl &lt;- control_bayes(verbose = TRUE)
+
+your_search &lt;- 
+  your_workflow %&gt;%
+  tune_bayes(
+    resamples = ...,
+    metrics = ...,
+    initial = initial_vals, #note you may simply pass a number here e.g. 6 for a random search
+    iter = 25,
+    control = ctrl
+  )</code></pre>
+<ul>
+<li>Call <code>show_best</code> and finalize your model</li>
+</ul>
+</div>
+<div id="part-c-conclusion-presentation" class="section level3">
+<h3>Part C, Conclusion &amp; Presentation</h3>
+<p>Write a four paragraph conclusion to your file. Include information on your model type, its performance on your chosen objective function, any ethical or implementation issues (e.g. should Detroit use your model?).</p>
+<p>In class on the 31st, everyone will give a brief presentation on their work. You may present your knitted Rmd file or pull some of your graphs into a slide deck. Your presentation should be at most five minutes. Broadly look to answer if your model should be implemented by discussing the information in your conclusion and assignment.</p>
 </div>
 </div>
 <div id="grading-overview" class="section level2">
