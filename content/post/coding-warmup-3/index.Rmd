@@ -22,7 +22,7 @@ This assignment is ungraded. I encourage you to review the problems to see if (1
 
 Exercise 7.2.3 from Data Science for Public Policy. Data can be found [here](https://raw.githubusercontent.com/DataScienceForPublicPolicy/diys/main/data/home_sales_nyc.csv).
 
-- Graph and regress sale price against gross square feet interpret the results
+-   Graph and regress sale price against gross square feet interpret the results
 
 ```{r}
 
@@ -40,11 +40,9 @@ reg_est <- lm(sale.price ~ gross.square.feet, data = sale_df)
 summary(reg_est)
 ```
 
-
 # Part 2
 
-Reproduce this figure from [tidymodels 3.3](https://www.tmwr.org/base-r.html#tidiness-modeling) 
-![](images/corr-plot-1.svg) with the data from Part 1 replacing mpg with sale price for numeric variables.
+Reproduce this figure from [tidymodels 3.3](https://www.tmwr.org/base-r.html#tidiness-modeling) ![](images/corr-plot-1.svg) with the data from Part 1 replacing mpg with sale price for numeric variables.
 
 ```{r}
 corr_res <- map(sale_df %>% 
@@ -61,19 +59,18 @@ corr_res %>%
   coord_flip()
 ```
 
-
 # Part 3
 
 Exercise 7.4.5
 
-Estimate a set of regressions, evaluate the pros and cons of each, and select the “best” specification.
+Estimate a set of regressions, evaluate the pros and cons of each, and select the "best" specification.
 
 Create and analyze the following four models from the textbook and one of your own:
 
-- Model 1 (mod1) regresses sales prices and building area
-- Model 2 (mod2) adds borough as a categorical variable
-- Model 3 (mod3) incorporates an interaction to estimate borough-specific slopes for building area
-- Model 4 (mod4) adds land area
+-   Model 1 (mod1) regresses sales prices and building area
+-   Model 2 (mod2) adds borough as a categorical variable
+-   Model 3 (mod3) incorporates an interaction to estimate borough-specific slopes for building area
+-   Model 4 (mod4) adds land area
 
 ```{r}
 library(gridExtra)
@@ -199,7 +196,6 @@ ggplot(test_preds, aes(x=.pred)) +
   geom_density()
 ```
 
-
 ```{r}
 divvy_data <- divvy_data %>%
   mutate(
@@ -243,5 +239,3 @@ ggplot(test_preds, aes(x=.pred)) +
   geom_density()
 
 ```
-
-
