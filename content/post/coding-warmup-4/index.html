@@ -58,7 +58,7 @@ library(tidymodels)
 ## x dplyr::lag()      masks stats::lag()
 ## x yardstick::spec() masks readr::spec()
 ## x recipes::step()   masks stats::step()
-## * Search for functions across packages at https://www.tidymodels.org/find/
+## * Learn how to get started at https://www.tidymodels.org/start/
 theme_set(theme_bw())
 
 data(bivariate)
@@ -75,6 +75,19 @@ ggplot(bivariate_train, aes(x=A, y=B, color=Class)) +
 <div id="part-c" class="section level2">
 <h2>Part C</h2>
 <p>Visually inspect the predictions using the code below</p>
+<pre class="r"><code># log_model, your parnsip model
+# bivariate_train / bivariate_val, data from bivariate
+
+# to plot the countour we need to create a grid of points and get the model prediction at each point
+x_grid &lt;-
+  expand.grid(A = seq(min(bivariate_train$A), max(bivariate_train$A), length.out = 100),
+              B = seq(min(bivariate_train$B), max(bivariate_train$B), length.out = 100))
+x_grid_preds &lt;- log_model %&gt;% augment(x_grid)
+
+# plot predictions from grid as countour and validation data on plot
+ggplot(x_grid_preds, aes(x = A, y = B)) + 
+  geom_contour(aes(z = .pred_One), breaks = .5, col = &quot;black&quot;) + 
+  geom_point(data = bivariate_val, aes(col = Class), alpha = 0.3)</code></pre>
 </div>
 <div id="part-d" class="section level2">
 <h2>Part D</h2>

@@ -58,7 +58,7 @@ test_preds
 
 Visually inspect the predictions using the code below
 
-```{r}
+```{r, include=TRUE}
 # log_model, your parnsip model
 # bivariate_train / bivariate_val, data from bivariate
 
