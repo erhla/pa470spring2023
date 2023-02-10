@@ -8,8 +8,8 @@ publishdate: 2023-02-08
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE,
-                      include = FALSE,
-                      eval = FALSE)
+                      include = TRUE,
+                      eval = TRUE)
 
 ```
 

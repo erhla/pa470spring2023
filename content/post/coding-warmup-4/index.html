@@ -58,7 +58,7 @@ library(tidymodels)
 ## x dplyr::lag()      masks stats::lag()
 ## x yardstick::spec() masks readr::spec()
 ## x recipes::step()   masks stats::step()
-## * Learn how to get started at https://www.tidymodels.org/start/
+## * Use suppressPackageStartupMessages() to eliminate package startup messages
 theme_set(theme_bw())
 
 data(bivariate)
@@ -67,10 +67,46 @@ ggplot(bivariate_train, aes(x=A, y=B, color=Class)) +
   geom_point(alpha=.3)</code></pre>
 <p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-1-1.png" width="672" /></p>
 <p>Use <code>logistic_reg</code> and <code>glm</code> to make a classification model of Class ~ A * B. Then use tidy and glance to see some summary information on our model. Anything stand out to you?</p>
+<pre class="r"><code>log_model &lt;- logistic_reg() %&gt;%
+  set_engine(&#39;glm&#39;) %&gt;%
+  set_mode(&#39;classification&#39;) %&gt;%
+  fit(Class ~ A*B,
+      data = bivariate_train)
+
+log_model %&gt;% tidy()
+## # A tibble: 4 x 5
+##   term          estimate  std.error statistic  p.value
+##   &lt;chr&gt;            &lt;dbl&gt;      &lt;dbl&gt;     &lt;dbl&gt;    &lt;dbl&gt;
+## 1 (Intercept)  0.115     0.404          0.284 7.76e- 1
+## 2 A            0.00433   0.000434       9.97  2.01e-23
+## 3 B           -0.0553    0.00633       -8.74  2.32e-18
+## 4 A:B         -0.0000101 0.00000222    -4.56  5.04e- 6
+log_model %&gt;% broom::glance()
+## # A tibble: 1 x 8
+##   null.deviance df.null logLik   AIC   BIC deviance df.residual  nobs
+##           &lt;dbl&gt;   &lt;int&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;       &lt;int&gt; &lt;int&gt;
+## 1         1329.    1008  -549. 1106. 1126.    1098.        1005  1009</code></pre>
 </div>
 <div id="part-b" class="section level2">
 <h2>Part B</h2>
 <p>Use augment to get predictions. Look at the predictions.</p>
+<pre class="r"><code>test_preds &lt;- log_model %&gt;% augment(bivariate_test)
+
+test_preds 
+## # A tibble: 710 x 6
+##        A     B Class .pred_class .pred_One .pred_Two
+##    &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt; &lt;fct&gt;           &lt;dbl&gt;     &lt;dbl&gt;
+##  1  742.  68.8 One   One           0.730      0.270 
+##  2  709.  50.4 Two   Two           0.491      0.509 
+##  3 1006.  89.9 One   One           0.805      0.195 
+##  4 1983. 112.  Two   Two           0.431      0.569 
+##  5 1698.  81.0 Two   Two           0.169      0.831 
+##  6  948.  98.9 One   One           0.900      0.0996
+##  7  751.  54.8 One   One           0.521      0.479 
+##  8 1254.  72.2 Two   Two           0.347      0.653 
+##  9 4243. 136.  One   Two           0.00568    0.994 
+## 10  713.  88.2 One   One           0.910      0.0898
+## # ... with 700 more rows</code></pre>
 </div>
 <div id="part-c" class="section level2">
 <h2>Part C</h2>
@@ -88,6 +124,7 @@ x_grid_preds &lt;- log_model %&gt;% augment(x_grid)
 ggplot(x_grid_preds, aes(x = A, y = B)) + 
   geom_contour(aes(z = .pred_One), breaks = .5, col = &quot;black&quot;) + 
   geom_point(data = bivariate_val, aes(col = Class), alpha = 0.3)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 </div>
 <div id="part-d" class="section level2">
 <h2>Part D</h2>
@@ -98,6 +135,36 @@ ggplot(x_grid_preds, aes(x = A, y = B)) +
 <li>roc_curve and autoplot</li>
 <li>f_meas</li>
 </ul>
+<pre class="r"><code>val_preds &lt;- log_model %&gt;% augment(bivariate_val)
+
+val_preds %&gt;% roc_auc(truth = Class,
+                      estimate = .pred_One)
+## # A tibble: 1 x 3
+##   .metric .estimator .estimate
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 roc_auc binary         0.790
+
+val_preds %&gt;% accuracy(truth = Class,
+                      estimate = .pred_class)
+## # A tibble: 1 x 3
+##   .metric  .estimator .estimate
+##   &lt;chr&gt;    &lt;chr&gt;          &lt;dbl&gt;
+## 1 accuracy binary          0.76
+
+
+roc_curve(val_preds,
+        truth = Class,
+        estimate = .pred_One) %&gt;%
+  autoplot()</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-5-1.png" width="672" /></p>
+<pre class="r"><code>
+f_meas(val_preds,
+        truth = Class,
+        estimate = .pred_class) 
+## # A tibble: 1 x 3
+##   .metric .estimator .estimate
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 f_meas  binary         0.827</code></pre>
 </div>
 <div id="part-e" class="section level2">
 <h2>Part E</h2>
@@ -109,4 +176,8 @@ ggplot(x_grid_preds, aes(x = A, y = B)) +
 <li>False Negative Rate (FNR), Type II error</li>
 <li>Positive Predictive Value (PPV) or Precision</li>
 </ul>
+<pre class="r"><code>val_preds %&gt;% conf_mat(truth = Class,
+                      estimate = .pred_class) %&gt;%
+  autoplot(&quot;heatmap&quot;)</code></pre>
+<p><img src="{{< blogdown/postref >}}index_files/figure-html/unnamed-chunk-6-1.png" width="672" /></p>
 </div>
