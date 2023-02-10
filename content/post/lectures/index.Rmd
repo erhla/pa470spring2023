@@ -32,13 +32,16 @@ knitr::opts_chunk$set(collapse = TRUE,
 - [Code](/lectures/week_4.Rmd)
 - [Code Output](/lectures/week_4.html)
 
-```{r eval=FALSE, include=FALSE}
-
 # Week 5
 
 - [Slides](https://docs.google.com/presentation/d/1j7S7FDCjgT0UrdzSdFeXVYBo93E6YaBGIcv2UwY1Vi0/edit?usp=sharing)
 - [Code](/lectures/week_5.Rmd)
 - [Code Output](/lectures/week_5.html)
+
+
+```{r eval=FALSE, include=FALSE}
+
+
 
 
 # Week 6

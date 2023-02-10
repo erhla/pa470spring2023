@@ -3,14 +3,13 @@ title: "Coding Warmup 4"
 date: 2023-02-16
 categories: ["R"]
 tags: ["warmup"]
-publishdate: 2023-02-09
+publishdate: 2023-02-08
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(collapse = TRUE,
                       include = FALSE,
                       eval = FALSE)
-
 
 ```
 

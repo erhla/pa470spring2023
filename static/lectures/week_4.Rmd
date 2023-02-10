@@ -30,8 +30,10 @@ Some more helpful tools.
 Checking model specification
 
 ```{r}
-parsnip::rand_forest() %>%  set_engine("ranger") %>% 
-  set_mode("regression")  %>% translate()
+parsnip::rand_forest() %>%  
+  set_engine("ranger") %>%
+  set_mode("regression") %>% 
+  translate()
 
 #?rand_forest
 
