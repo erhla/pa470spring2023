@@ -46,7 +46,7 @@ lm_wflow <-
 
 data(ames)
 
-ames <- mutate(ames, Sale_Price = log10(Sale_Price))
+ames <- ames %>% mutate(Sale_Price = log10(Sale_Price))
 
 set.seed(123)
 ames_split <- initial_split(ames, prop = 0.80, strata = Sale_Price)
@@ -77,8 +77,6 @@ simple_ames <-
   step_log(Gr_Liv_Area, base = 10) %>% 
   step_dummy(all_nominal_predictors())
 simple_ames
-
-
 ```
 
 Another key point from 8.3, all preprocessing/feature engineering steps only use the training data. Otherwise, your model might utilize information leakage and lead to overfitting.
@@ -119,6 +117,8 @@ divvy_rec <- recipe(rides ~ solar_rad + started_hour +
                keep_original_cols = FALSE) %>%
   step_dummy(all_nominal_predictors())
 
+
+#divvy_rec %>% prep() %>% bake(test) %>% view()
 
 divvy_workflow <-
   workflow() %>%

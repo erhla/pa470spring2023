@@ -14,7 +14,13 @@ library(tidyverse)
 library(lubridate)
 library(tidymodels)
 
-con <- DBI::dbConnect(RSQLite::SQLite(), "database/detroit.sqlite")
+if(file.exists("database/detroit.sqlite")){
+  f <- "database/detroit.sqlite"
+} else {
+  f <- "static/solutions/database/detroit.sqlite"
+}
+
+con <- DBI::dbConnect(RSQLite::SQLite(), f)
 
 assessments <- dplyr::tbl(con, 'assessments') %>% collect()
 sales <- dplyr::tbl(con, 'sales') %>% collect()
