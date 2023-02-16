@@ -90,7 +90,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 **Assignment: [Detroit Part 1, Due 2/13](/detroit-part-1)**
 
-## Week 6, 2/16
+## Week 6, 2/16 (online)
 
 - Chapter 9, DSPP
 - [tidymodels, Chapter 9 Effectiveness](https://www.tmwr.org/index.html)
@@ -116,14 +116,14 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 - Sections 10.0-10.4, DSPP
 - [Cross Validation Reduce, Reuse, Resample](https://mlu-explain.github.io/cross-validation/)
 
-**Assignment: [Detroit Part 2](/detroit-part-2)**
-
 ## Week 8, 3/2
 
 *Coding 4*
 
 - Sections 10.5-10.6, DSPP
 - [tidymodels, Chapter 10-11 Resampling](https://www.tmwr.org/index.html)
+
+**Assignment: [Detroit Part 2](/detroit-part-2)**
 
 ## Week 9, 3/9
 

@@ -38,17 +38,15 @@ knitr::opts_chunk$set(collapse = TRUE,
 - [Code](/lectures/week_5.Rmd)
 - [Code Output](/lectures/week_5.html)
 
-
-```{r eval=FALSE, include=FALSE}
-
-
-
-
 # Week 6
 
 - [Code](/lectures/week_6.Rmd)
 - [Code Output](/lectures/week_6.html)
+- [Part 1 Code](/solutions/part_1.Rmd)
+- [Part 1 Solutions](/solutions/part_1.html)
 
+
+```{r eval=FALSE, include=FALSE}
 
 # Week 7
 
