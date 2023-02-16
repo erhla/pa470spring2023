@@ -66,13 +66,13 @@ For each assignment, you will be graded on substantial completion of the assignm
 
 The assignment will culminate in a final submission of code/report and presentation. Code will be graded based on reproducibility, conceptual understanding, and accuracy. The report will be an Rmarkdown file which knits together graphs, tables, and ethical frameworks. It should be concise (include only relevant information from Parts 1-4). This report will be used to give a five minute presentation to the class on your model and ethical/technical issues with Detroit property assessment.
 
-| Date   | Points | Category                                     | Notes                                                                           |
+| Asg.   | Points | Category                                     | Notes                                                                           |
 |-----------|-----------|----------------------------------------------|-------------------------------------------|
-| 13-Feb | 5      | Substantial Completion (attempted all parts) | Part 1 Due                                                                      |
-| 23-Feb | 5      | Substantial Completion (attempted all parts) | Part 2 Due                                                                      |
-| 23-Feb | 5      | Incorporation of Feedback/New Concepts       | From Part 1                                                                     |                                                         |
-| 16-Mar | 10      | Substantial Completion (attempted all parts) | Part 3 Due                                                                      |
-| 16-Mar | 10      | Incorporation of Feedback/New Concepts       | From Part 2                                                                     |
-| 30-Mar | 30     | Final Code                                   | Reproducible (10), Concepts (10), Accurate (10)                                 |
-| 30-Mar | 20     | Final Report                                 | Via Rmarkdown HTML, contextualized analysis and ethics |
-| 30-Mar | 15     | Final Presentation                           | 3-5 minute presentation on model and insights                                     |
+| 1 | 5      | Substantial Completion (attempted all parts) |                                                                                 |
+| 2 | 5      | Substantial Completion (attempted all parts) |                                                                                 |
+| 2 | 5      | Incorporation of Feedback/New Concepts       | From Part 1                                                                     |                                                         |
+| 3 | 10      | Substantial Completion (attempted all parts) |                                                                                 |
+| 3 | 10      | Incorporation of Feedback/New Concepts       | From Part 2                                                                     |
+| 4 | 30     | Final Code                                   | Reproducible (10), Concepts (10), Accurate (10)                                 |
+| 4 | 20     | Final Report                                 | Via Rmarkdown HTML, contextualized analysis and ethics |
+| 4 | 15     | Final Presentation                           | 3-5 minute presentation on model and insights                                     |
