@@ -106,6 +106,189 @@ Figure 13.
 # 10.4.4
 
 
+*From Chapter 10*
+  
+
+How much is a fair wage? Societies have pondered this question for ages, but perhaps more so in the modern age. There have been long standing concerns over the gender, ethnic, and racial pay gaps, which had seen progress at one point but more recently has stagnated. To remedy these pay differentials, some US cities such as New York City and Philadelphia as well as states like California have banned employers from asking for applicant salary history. What *should* be considered to be a fair wage? One way we can evaluate a wage is to predict it based on historical data on industry, experience and education while omitting demographic factors. In fact, decomposing the contributing factors, then predicting wages has been a task that policy researchers have long researched with the hope of better labor policy. For example, @efficiencywages examined wage differentials of equally skilled workers across industries, taking advantage of labor quality.
+
+In this DIY, we prototype a tree-based model to *predict* wages based on worker characteristics gathered from a widely used survey. *What can a wage model be used for?* Having an accurate prediction model can be used to evaluate if staff are under-valued in the market, which in turn can be used to pre-empt possible churn with pay increases. A wage model could help set expectations on employment costs, scoring new positions to support budgetary and human resources use cases. 
+
+__Data__. Drawing on the US Census Bureau's 2016 American Community Survey (ACS), we constructed a training sample (`train`) and test sample (`test`) focused on California. Each sample randomly draws a set of $n=3000$ records, mainly to reduce the computational overhead for this exercise while preserving the patterns in the data.^[The ACS is a probability sample with sampling weights. To produce population statistics from the data, we need to account for these weights; However, for this use case, we will treat each observation with equal weight.] The data have been filtered to a subset of employed wage earners (`> $0 earned`) who are 18 years of age and older. Each sample contains the essential variables needed for predicting fair wages, namely experience, education, hours worked per week, among others:
+
+- `id` is a unique identification number
+- `wage` of the respondent in 2016.
+- `exp` is the number of years of experience (approximated from age and education attainment)
+- `schl` is the highest level of education attained.
+- `wkhp` is the hours worked per week.
+- `naics` is a NAICS code used to identify the industry in which the respondent is working.
+- `soc` is a description for the Standard Occupation Code (SOC) used for job classification.
+- `work.type`. Class of worker indicates whether a respondent works for government, for-profit business, etc.
 
 
+```{r, warning=FALSE, message=FALSE}
+#Load data
+load(url("https://github.com/DataScienceForPublicPolicy/diys/raw/main/data/wages.Rda"))
+```
+
+Let's get to know the data. In Figure \@ref(fig:wagecor1), we plot the relationship of wage against each years of experience, indicating that wages increase with each additional year of experience up to 20 years, plateaus for 20 years then gradually declines after 40 years. While there is a clear central trend, each person's experience is quite variable -- some achieving high salaries even while the age trend declines. The value of education, as seen in Figure \@ref(fig:wagecor2), also has an impact on wages, but it is only realized once enough education has been accumulated. In fact, the box plot suggests that median wage only grows at an accelerated pace once an individual attains an Associate's Degree. There is a large increase in the median wage among Bachelor's to Master's degree holders, although the wages of high-powered Bachelor's rivals the earning potential of graduate degree holders. In both cases, the wages are dispersed around the experience and education trends, suggesting that a multitude of other factors play roles as well. 
+
+
+```{r wagecor1, echo = FALSE, fig.cap = "Wage by years of experience.", fig.height = 2.5}
+ 
+pacman::p_load(ggplot2, gridExtra)
+#Scatter plot of wage 
+ plot1 <- ggplot(train, aes(x = exp, y = wage)) + 
+       geom_point(colour = "darkgrey", alpha = 0.15, shape=16) + 
+       xlab("Years of Experience") + ylab("Wage") + 
+       geom_smooth(se=F, method = "loess", span = 0.2, colour = "#4472C4")+
+       theme_bw() + 
+       theme(plot.title = element_text(size = 10),
+          axis.text=element_text(size=10),
+          axis.title=element_text(size=10)) 
+ 
+#Box Plot of Education attainment
+ train2 <- train
+ train2$schl <- substr(as.character(train2$schl), 1, 14)
+ plot2 <- ggplot(train2, aes(schl, wage, fill = schl)) + 
+      geom_boxplot(show.legend = FALSE) + coord_flip() +
+      ylab("Wage") + xlab("") + 
+      theme_bw() + 
+      theme(legend.position = "none",
+         plot.title = element_text(size = 10),
+          axis.text=element_text(size=8),
+          axis.title=element_text(size=9)) 
+ plot1
+```
+
+```{r wagecor2, echo = FALSE, fig.cap = "Wage by education attainment.", fig.height = 4, fig.align='center'}
+ plot2
+```
+
+__Training__. When we train algorithms, we should take advantage of the interactions between type of job, industry, role among other factors to produce richer more accurate predictions and tree-based algorithms such as CART (`rpart` package) and Random Forest (`ranger` package) are perfect for this type of problem. But which tree-based algorithm would work best? The answer lies in a computer science tradition that pits two or more models against one another in a *horse race*. Through cross validation, we can compare Root Mean Squared Error (RMSE) that penalize larger errors in order to identify which algorithm is the all-around best. 
+
+```{r, message = FALSE, warning=FALSE}
+#Load packages
+library(tidymodels)
+```
+
+A fair horse race places all algorithms on the same field under similar conditions. For setting up model comparisons, we train the algorithms in a five-fold cross validation design.^[The number of folds could be increased but with greater time cost. As you will see when we begin training the models, the Random Forest will take some time to run. If the number of folds were increased, we not only would obtain more precise model accuracy estimates but the time required also increases. Thus, we select a smaller value for demonstration purposes.] As for the input variables, we could hand-select a set that we believe best represents wages at the risk of biasing the predictions. Alternatively, we "*toss in the kitchen sink*" in which all variables are included in all models, allowing the algorithm to identify the most statistically relevant variables. 
+
+```{r, message = FALSE, warning = FALSE, results='hide'}
+folds <- vfold_cv(train, v=5)
+
+tree_recipe <- recipe(wage ~ exp + schl + 
+                wkhp + naics + soc + work.type, data=train) %>%
+  step_unknown(all_nominal_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
+  step_dummy(all_factor())
+
+
+dt_mod <- 
+  decision_tree(cost_complexity = tune()) %>%
+  set_mode('regression') %>%
+  set_engine('rpart')
+
+tree_grid <- grid_regular(cost_complexity(),
+                          levels = 5)
+
+dt_wf <- 
+  workflow() %>%
+  add_model(dt_mod) %>%
+  add_recipe(tree_recipe)
+```
+
+
+*__CART__*. To train CART model in `tidymodels`, we specify `set_engine('rpart')` along with the data and model formulation. The data scientist's work lies in tuning the complexity parameter `cp` that controls how deep the CART grows. When $cp = 0$, a CART can grow to its fullest, otherwise, any value $0 \leq cp \leq 1$ will limit the extent to which the tree will grow -- essentially a stopping criteria. For a prototype, an approximate solution will do. We will test 50 different scenarios.
+
+```{r, message = FALSE, warning = FALSE, results='hide'}
+
+tree_res <- 
+  dt_wf %>% 
+  tune_grid(
+    resamples = folds,
+    grid = tree_grid
+    )
+
+```
+\vspace{12pt} 
+ 
+Let's take a look at the results captured. As the `cp` value falls to zero, the model becomes more complex and "soaks up" more of the patterns in the data, which in turn causes the error to fall sharply. It also becomes clear how sensitive CART performance is to tree complexity -- if it is not complex enough, the model will produce underwhelming results that miss the mark. Overly complex trees, in contrast, produce noisy results. Finding the Goldilocks value of `cp` is of paramount importance. 
+
+```{r}
+tree_res %>% collect_metrics() %>% DT::datatable()
+
+tree_res %>%
+  collect_metrics() %>%
+  ggplot(aes(cost_complexity, mean)) +
+  geom_line(linewidth = 1.5, alpha = 0.6) +
+  geom_point(size = 2) +
+  facet_wrap(~ .metric, scales = "free", nrow = 2) +
+  scale_x_log10(labels = scales::label_number()) +
+  scale_color_viridis_d(option = "plasma", begin = .9, end = 0)
+```
+
+
+*Pro Tip:* Although the lowest `cp` value has the best performance (lowest RMSE), it is statistically indistinguishable from other `cp` values that are within one standard deviation of the lowest RMSE. A well-accepted rule of thumb is to *choose the largest `cp` value that is still within one standard deviation of the lowest RMSE*. In effect, this decision theoretic defaults to the simplest model available that does not lead to substantial loss in accuracy. A smaller tree also has a higher chance of being articulated to less technical audiences. Despite tuning the CART model, even the best model has relatively modest performance -- perhaps a Random Forest can offer an improvement.
+
+
+Since the *__Random Forest__* algorithm grows hundreds of trees, we need a package that is built to scale. The `ranger` package was developed with this in mind, making it a perfect choice for general data science applications. Through `tidymodels`, we train a Random Forest model and tune four hyperparameters:
+
+> - `mtry` (optional) is the number of variables to be randomly sampled per iteration. Default is $\sqrt{k}$ for classification and $\frac{k}{3}$ for regression. Default set to the square root of the number of variables.
+> - `ntree` (optional) is the number of trees. Default is 500.
+> - `min.node.size` (optional) is the minimum size of any leaf node. The default settings vary by modeling problem. For example, the minimum for regression problems is $n=5$, whereas the minimum for classification is $n=1$.
+> - `max.depth` (optional) as the maximum number of splits between a tree stump (one split) and a fully grown tree (unlimited). This is similar to a stopping rule in CART. By default, `max.depth = NULL` indicating unlimited depth.
+
+We could task `tidymodels` to test a large number of automatically selected scenarios. To save on time, we instead specify sensible default hyperparameters: each tree sub-samples $\sqrt{k}$ variables per tree ($mtry = 24$ in this case).^[As each level of a categorical variable (e.g. `soc`, `naics`, `schl`) is treated as a dummy variable, we test $mtry = 24$.] 
+
+*An aside: why not tune the Random Forest?* Random Forests are computationally intensive and conducting a grid search can be time consuming. As an initial prototype, the objective is to produce *something* that is as accurate but operational as possible to prove that the concept works. *Show the thing* and prioritize speed. A Random Forest trained even with default hyperparameters generally offers improvements over CART and linear regression. Thus, testing a single hyperparameter set might yield a clear gains over the alternative CART -- a good zero-to-one improvement -- a version 1 (v1). If we see little or no improvement, then we can assume that a Random Forest could require more exhaustive effort to optimize -- a good candidate for a version 2 effort (v2). 
+
+
+```{r, message = FALSE, warning=FALSE}
+rf_mod <- 
+  rand_forest() %>%
+  set_mode('regression') %>%
+  set_engine('ranger', importance = "impurity")
+
+
+rf_wf <- 
+  workflow() %>%
+  add_model(rf_mod) %>%
+  add_recipe(tree_recipe)
+
+rf_res <- 
+  rf_wf %>% 
+  fit_resamples(folds)
+
+rf_res %>%
+  collect_metrics()
+
+tree_res %>% show_best('rmse')
+```
+
+
+
+__Evaluating models__. Compare best RMSE and R2.^[Note that exact results will differ slightly from one user to the other due to the random sampling in cross validation.] The decision is an easy one: lean on the Random Forest. 
+
+*Raw accuracy is hard to sell, even if the performance gains are large.*^[Contextualized performance gains in terms of dollars and lives saved are a different story, however.] What is satisfactory for a data scientist might not be for policy makers -- there is a need for a policy narrative that maps where an algorithm or program in the normative. There is a need for closure and transparency, especially when decisions are being made. 
+
+Whereas CART lends self to producing profiles, Random Forests are a different breed. To begin the unravel the mysteries that the Random Forests has learned, we can rely on variable importance metrics to tell that story. The Random Forest derives the most information from number of hours worked (`wkhp`), followed by years of experience (`exp`) and various levels of education attainment (`schl`). Remember, importance does not show direction of correlation, but rather shows how much the algorithm relies on a variable to split the sample. 
+
+
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+placehold_rf <- rf_wf %>% 
+  fit(train)
+library(vip)
+placehold_rf %>% 
+  extract_fit_parsnip() %>% 
+  vip::vip(num_features = 10)
+```
+
+__Producing predictions__. Random Forests produce predictions $\hat{y}_i$ like any other algorithm by making use of the `predict` function. Below, the trained model scores the `test` set.
+
+```{r}
+
+placehold_rf %>% augment(test) %>%
+  select(wage, .pred)
+
+```
 
