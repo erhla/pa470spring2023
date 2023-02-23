@@ -49,6 +49,8 @@ Your pipeline is where you bring the steps above into a cohesive object and is t
 Ch 10-15 of tidymodels offer methods to create numerous models and select the best for predictive performance. In combination, these methods will artificially create hundreds of different datasets by resampling, and try hundreds of different hyperparameter specifications. We will then select the 'best' model based on an additional objective functions (such as accuracy or RMSE).
 
 
+
+
 # Resampling
 
 Section 10.1 in tidymodels give an example of a linear model and a random forest model which perform differently on training and testing to frame why resampling is important.
