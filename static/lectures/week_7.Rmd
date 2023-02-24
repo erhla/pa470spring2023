@@ -183,6 +183,8 @@ tree_recipe <- recipe(wage ~ exp + schl +
   step_dummy(all_factor())
 
 
+tree_recipe %>% prep() %>% bake(train)
+
 dt_mod <- 
   decision_tree(cost_complexity = tune()) %>%
   set_mode('regression') %>%
@@ -209,6 +211,9 @@ tree_res <-
     grid = tree_grid
     )
 
+
+tree_res %>% collect_metrics()
+
 ```
 \vspace{12pt} 
  
@@ -234,9 +239,9 @@ tree_res %>%
 Since the *__Random Forest__* algorithm grows hundreds of trees, we need a package that is built to scale. The `ranger` package was developed with this in mind, making it a perfect choice for general data science applications. Through `tidymodels`, we train a Random Forest model and tune four hyperparameters:
 
 > - `mtry` (optional) is the number of variables to be randomly sampled per iteration. Default is $\sqrt{k}$ for classification and $\frac{k}{3}$ for regression. Default set to the square root of the number of variables.
-> - `ntree` (optional) is the number of trees. Default is 500.
-> - `min.node.size` (optional) is the minimum size of any leaf node. The default settings vary by modeling problem. For example, the minimum for regression problems is $n=5$, whereas the minimum for classification is $n=1$.
-> - `max.depth` (optional) as the maximum number of splits between a tree stump (one split) and a fully grown tree (unlimited). This is similar to a stopping rule in CART. By default, `max.depth = NULL` indicating unlimited depth.
+> - `tree` (optional) is the number of trees. Default is 500.
+> - `min_n` (optional) is the minimum size of any leaf node. The default settings vary by modeling problem. For example, the minimum for regression problems is $n=5$, whereas the minimum for classification is $n=1$.
+
 
 We could task `tidymodels` to test a large number of automatically selected scenarios. To save on time, we instead specify sensible default hyperparameters: each tree sub-samples $\sqrt{k}$ variables per tree ($mtry = 24$ in this case).^[As each level of a categorical variable (e.g. `soc`, `naics`, `schl`) is treated as a dummy variable, we test $mtry = 24$.] 
 
