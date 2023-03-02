@@ -149,6 +149,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 *Coding 4*
 
+- [Against Predictive Optimization: On the Legitimacy of Decision-Making Algorithms that Optimize Predictive Accuracy](https://predictive-optimization.cs.princeton.edu/)
 - [tidymodels, Tuning Chapter 12-15](https://www.tmwr.org/index.html)
 
 **Assignment: [Detroit Part 3](/detroit-part-3)**
@@ -187,8 +188,11 @@ Spring Vacation No Class
 
 ## Week 15, 4/20
 
-*Public Sector Careers*
+*Public Sector Implementation*
 
+- [A New Executive Order Ties Equity in AI to a Broader Civil Rights Agenda](https://points.datasociety.net/a-new-executive-order-ties-equity-in-ai-to-a-broader-civil-rights-agenda-ee448fda077b)
+- [Implementation Challenges to Three Pillars of America's AI Strategy](https://hai.stanford.edu/white-paper-implementation-challenges-three-pillars-americas-ai-strategy)
+- [From Algorithmic Audits to Actual Accountability: Overcoming Practical Roadblocks on the Path to Meaningful Audit Interventions for AI Governance](https://dl.acm.org/doi/abs/10.1145/3514094.3539566)
 - Ch 5 Weapons of Math Destruction, on Blackboard
 - Chapter 15, DSPP
 

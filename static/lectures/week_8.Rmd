@@ -7,6 +7,7 @@ output:
     df_print: paged
     theme: sandstone
     number_sections: true
+    code_folding: hide
 ---
 
 ```{r initial_setup, include=FALSE}
@@ -15,7 +16,7 @@ library(tidymodels)
 library(lubridate)
 library(kableExtra)
 library(scales)
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 theme_set(theme_bw())
 ```
@@ -52,6 +53,8 @@ Ch 10-15 of tidymodels offer methods to create numerous models and select the be
 
 
 # Resampling
+
+![](https://www.tmwr.org/premade/resampling.svg)
 
 Section 10.1 in tidymodels give an example of a linear model and a random forest model which perform differently on training and testing to frame why resampling is important.
 
@@ -91,6 +94,17 @@ rf_wf <-
   add_formula(class ~ .)
 
 ```
+
+## Cross Validation
+
+
+V=3, 3-fold cross-validation
+
+![](https://www.tmwr.org/premade/three-CV.svg)
+
+![](https://www.tmwr.org/premade/three-CV-iter.svg)
+
+1/3rd of the folds are held out for assessment.
 
 Our folds, using 5-fold cross validation:
 
@@ -156,11 +170,48 @@ Bootstrapping creates samples drawn with replacement.
 
 This code would create 50 folds.
 
+![](https://www.tmwr.org/premade/bootstraps.svg)
+
+### Rolling Origin
+
+![](https://www.tmwr.org/premade/rolling.svg)
+
 ## Summary
 
 During resampling, the analysis set is used to preprocess the data, apply the preprocessing to itself, and use these processed data to fit the model.
 
 The preprocessing statistics produced by the analysis set are applied to the assessment set. The predictions from the assessment set estimate performance.
+
+# Performance
+
+```{r}
+control_options <- control_resamples(
+  save_pred= TRUE,
+  save_workflow = TRUE,
+  verbose = TRUE
+)
+
+rf_fit_rs <- 
+  rf_wf %>% 
+  fit_resamples(folds, control=control_options)
+
+rf_preds <- rf_fit_rs %>% collect_predictions()
+```
+
+### Parallelization
+
+```{r, eval=FALSE}
+library(doParallel)
+
+# Create a cluster object and then register: 
+cl <- makePSOCKcluster(2)
+registerDoParallel(cl)
+
+# Now run fit_resamples()...
+
+stopCluster(cl)
+```
+
 
 # Models
 
@@ -179,3 +230,131 @@ Gradient boosting is very similar to decision trees which gradually improves its
 ## Neural Networks
 
 Figure 10.14.
+
+# Ch 11 Comparing Models
+
+Workflow sets.
+
+Let's bring out a new toy data set---precinct level mayoral election results.
+
+We can construct a few different prediction questions here which make varying levels of sense.
+
+For example:
+
+- Predicting the total number of votes cast in a precinct
+- Predicting which candidate would receive the most votes in a precinct
+- Predicting how many votes a candidate would receive in a precinct
+
+Let's make three different models to try and 'predict' the total number of votes cast.
+
+```{r}
+election <- read_csv('https://github.com/erhla/pa470spring2023/raw/main/static/lectures/week_8_data.csv') %>%
+  mutate(total_votes = rowSums(.[18:26]),
+         ward = as.character(ward),
+         precinct = as.character(precinct))
+
+ele_split <- initial_split(election)
+ele_train <- training(ele_split)
+folds <- rsample::vfold_cv(ele_train, v = 10)
+
+#recipe
+simple_rec <- recipe(total_votes ~ ward + total_pop + total_units + occupied +
+                       vacant + total_hisp + total_nonhisp + white_alone +
+                       black_alone + aian_alone + nhpi_alone + asian_alone +
+                       other_alone + two_or_more + long + lat,
+                     data=ele_train) %>% 
+  step_dummy(all_nominal_predictors())
+
+
+interaction_rec <- simple_rec %>% 
+  step_interact( ~ total_pop:contains("alone") ) %>%
+  step_interact( ~ total_units:occupied) %>%
+  step_interact( ~ total_units:vacant)
+
+interaction_geo_rec <- interaction_rec %>%
+    step_ns(lat, long, deg_free = 50)
+
+preproc <- list(
+  simple = simple_rec,
+  interactions = interaction_rec,
+  inter_geo = interaction_geo_rec
+)
+
+#model
+init_mod <- list(lm = linear_reg())
+
+#workflowset
+lm_models <- workflow_set(
+  preproc=preproc,
+  models=init_mod,
+)
+lm_models
+
+```
+
+
+Now we need to resample each of the models. This is a similar task to 'mapping.'
+
+```{r}
+keep_pred <- control_resamples(save_pred = TRUE, save_workflow = TRUE)
+
+lm_models <- 
+  lm_models %>% 
+  workflow_map("fit_resamples", 
+               # Options to `workflow_map()`: 
+               seed = 1101, verbose = TRUE,
+               # Options to `fit_resamples()`: 
+               resamples = folds, control = keep_pred)
+
+lm_models
+
+collect_metrics(lm_models) %>% 
+  filter(.metric == "rmse")
+```
+
+
+```{r}
+library(ggrepel)
+autoplot(lm_models, metric = "rsq") +
+  geom_text_repel(aes(label = wflow_id), nudge_x = 1/8, nudge_y = 1/100) +
+  theme(legend.position = "none")
+```
+
+## 11.2 Comparing Resample Performance Stats
+
+Let's try and see if the differences between models are statistically significant.
+
+```{r}
+rsq_indiv_estimates <- 
+  collect_metrics(lm_models, summarize = FALSE) %>% 
+  filter(.metric == "rsq") 
+
+rsq_wider <- 
+  rsq_indiv_estimates %>% 
+  select(wflow_id, .estimate, id) %>% 
+  pivot_wider(id_cols = "id", names_from = "wflow_id", values_from = ".estimate")
+
+corrr::correlate(rsq_wider %>% select(-id), quiet = TRUE)
+```
+
+
+```{r}
+rsq_indiv_estimates %>% 
+  mutate(wflow_id = reorder(wflow_id, .estimate)) %>% 
+  ggplot(aes(x = wflow_id, y = .estimate, group = id, color = id)) + 
+  geom_line(alpha = .5, lwd = 1.25) + 
+  theme(legend.position = "none")
+```
+
+This compares model performance on each resample. If the resample-to-resample effect was not real, there would not be any parallel lines. A statistical test for the correlations evaluates whether the magnitudes of these correlations are not simply noise. For the linear models:
+
+```{r}
+rsq_wider %>% 
+  with( cor.test(simple_lm, interactions_lm ) ) %>% 
+  tidy() %>% 
+  select(estimate, starts_with("conf"))
+```
+
+The results of the correlation test (the estimate of the correlation and the confidence intervals) show us that the within-resample correlation appears to be real.
+
+See other techniques in 11.3 and 11.4.
