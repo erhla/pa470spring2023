@@ -147,10 +147,10 @@ rf_testing_pred <- collect_predictions(rf_fit_rs, summarize = TRUE)
 
 
 rf_testing_pred %>%                   
-  accuracy(truth = class, .pred_class)
+  accuracy(truth = class, estimate=.pred_class)
 
 rf_testing_pred %>%                   
-  roc_curve(truth = class, .pred_PS) %>%
+  roc_curve(truth = class, estimate=.pred_PS) %>%
   autoplot()
 ```
 
@@ -358,3 +358,97 @@ rsq_wider %>%
 The results of the correlation test (the estimate of the correlation and the confidence intervals) show us that the within-resample correlation appears to be real.
 
 See other techniques in 11.3 and 11.4.
+
+```{r}
+p_max <- election %>% select(precinct, ward, Green:Garcia) %>%
+  pivot_longer(-c(precinct, ward)) %>%
+  group_by(precinct, ward) %>%
+  slice_max(order_by=`value`, n=1)
+
+election_class <- election %>% left_join(
+  p_max %>% rename(top=name)
+)
+
+
+ele_split2 <- initial_split(election_class)
+ele_train2 <- training(ele_split2)
+folds2 <- rsample::vfold_cv(election_class, v = 3)
+
+#recipe
+simple_rec <- recipe(top ~ ward + total_pop + total_units + occupied +
+                       vacant + total_hisp + total_nonhisp + white_alone +
+                       black_alone + aian_alone + nhpi_alone + asian_alone +
+                       other_alone + two_or_more + long + lat,
+                     data=ele_train2) %>% 
+  step_dummy(all_nominal_predictors())
+
+
+interaction_rec <- simple_rec %>% 
+  step_interact( ~ total_pop:contains("alone") ) %>%
+  step_interact( ~ total_units:occupied) %>%
+  step_interact( ~ total_units:vacant)
+
+interaction_geo_rec <- interaction_rec %>%
+    step_ns(lat, long, deg_free = 50)
+
+preproc <- list(
+  simple = simple_rec,
+  interactions = interaction_rec,
+  inter_geo = interaction_geo_rec
+)
+
+#model
+init_mod <- list(dt = decision_tree() %>% set_mode('classification'))
+
+#workflowset
+
+dt_models <- workflow_set(
+  preproc=preproc,
+  models=init_mod,
+)
+dt_models
+
+keep_pred <- control_resamples(save_pred = TRUE, save_workflow = TRUE)
+
+dt_models <- 
+  dt_models %>% 
+  workflow_map("fit_resamples", 
+               # Options to `workflow_map()`: 
+               seed = 1101, verbose = TRUE,
+               # Options to `fit_resamples()`: 
+               resamples = folds2, control = keep_pred)
+
+collect_metrics(dt_models)
+
+autoplot(dt_models, metric = "roc_auc") +
+  geom_text_repel(aes(label = wflow_id), nudge_x = 1/8, nudge_y = 1/100) +
+  theme(legend.position = "none")
+
+dt_preds <- collect_predictions(dt_models)
+
+autoplot(dt_models, metric = "accuracy") +
+  geom_text_repel(aes(label = wflow_id), nudge_x = 1/8, nudge_y = 1/100) +
+  theme(legend.position = "none")
+
+roc_auc(dt_preds, truth=top, estimate=c(.pred_Garcia, .pred_Johnson, .pred_Lightfoot, .pred_Vallas, .pred_Wilson))
+
+roc_curve(dt_preds, truth=top, estimate=c(.pred_Garcia, .pred_Johnson, .pred_Lightfoot, .pred_Vallas, .pred_Wilson)) %>%
+  autoplot()
+
+
+
+selected_workflow <- 
+  workflow() %>%
+  add_model(decision_tree() %>% 
+              set_engine("rpart") %>%
+              set_mode('classification')) %>%
+  add_recipe(simple_rec)
+
+ft_tree <- selected_workflow %>% fit(ele_train2)
+
+tree_fit <- ft_tree %>% 
+  extract_fit_engine()
+rpart.plot::rpart.plot(tree_fit)
+
+```
+
