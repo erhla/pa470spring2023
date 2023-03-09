@@ -13,7 +13,7 @@ knitr::opts_chunk$set(collapse = TRUE,
 
 ## Overview
 
-The final project from this course will be an opportunity for you to demonstrate an understanding of ethical applications of machine learning in the public sector. This understanding can either be demonstrated via building a public sector machine learning pipeline or writing a paper which analyzes the course material and constructs an application of ML in the public sector. A project proposal must be submitted by 4/4. The final submission will be due before class on 4/28 with an in-class presentation on 4/28.
+The final project from this course will be an opportunity for you to demonstrate an understanding of ethical applications of machine learning in the public sector. This understanding can either be demonstrated via building a public sector machine learning pipeline or writing a paper which analyzes the course material and constructs an application of ML in the public sector. A project proposal must be submitted by 4/4. The final submission will be due after class on 4/28 with an in-class presentation on 4/27.
 
 ## Pipeline, Option 1
 

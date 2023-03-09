@@ -16,20 +16,19 @@ publishdate: 2023-03-09
 <h2>Submissions</h2>
 <p>Each week you will submit two files on blackboard, your code/Rmd file and the knitted output of your code. Blackboard will not accept html files so you must zip the files together.</p>
 </div>
-<div id="part-3-due-320-1159pm" class="section level2">
-<h2>Part 3 (Due 3/20, 11:59pm)</h2>
-<p>Create <code>part_3.Rmd</code> in the reports folder, copying the yaml/framework from <code>part_1.Rmd</code>.</p>
-<p><strong>NOTE: I have updated <a href="https://uic365-my.sharepoint.com/:u:/g/personal/erhlango_uic_edu/EaeVtM_p_eVEjzAHixZ5YrQBAUpI2nPtvgXcpYoJr1ZT3Q">the database</a> with a new table, <code>attributes</code>, which includes better property characteristic information.</strong></p>
-<p>Rough codebook:</p>
+<div id="part-3-due-319-1159pm" class="section level2">
+<h2>Part 3 (Due 3/19, 11:59pm)</h2>
+<p>Create <code>part_3.Rmd</code>, copying the yaml/framework from your previous work.</p>
+<p>Note, you may wish to use the <code>attributes</code> table for some property characteristics. Example codebook:</p>
 <pre><code>exterior, (1 siding, 2 brick/other, 3 brick, 4 other)
 bath, (1 1.0, 2 1.5, 3 2 to 3, 4 3+)
 height, (1 1 to 1.5, 2 1.5 to 2.5, 3 3+)</code></pre>
-<div id="part-a-20" class="section level3">
-<h3>Part A (20%)</h3>
-<p>Begin to finalize your report by only including report/website quality output. By this, only include stylized output (do not use base R print). Avoid any package loading or other incidential inclusion of output in your report. This could mean using stargazer to show regressions, DT::datatable to show data.frames, and adding titles/labels to plots. Give all plots and tables appropriate captions. Write two to three sentence introductions for the different sections of your report. Your report should introduce property assessment in Detroit, Michigan (as defined in part 2A), your two prediction models (from 2B and 2C), and a conclusion.</p>
+<div id="part-a-10" class="section level3">
+<h3>Part A (10%)</h3>
+<p>Begin to finalize your report by only including report/website quality output. By this, only include stylized output (do not use base R print). Include your code in your report using <code>code_folding: hide</code>. Avoid any package loading or other incidential inclusion of output in your report. This could mean using stargazer to show regressions, DT::datatable to show data.frames, and adding titles/labels to plots. Give all plots and tables appropriate captions. Write two to three sentence introductions for the different sections of your report. Your report should introduce property assessment in Detroit, Michigan (as defined in part 2A), your two prediction models (from 2B and 2C), and a conclusion.</p>
 </div>
-<div id="part-b-20" class="section level3">
-<h3>Part B (20%)</h3>
+<div id="part-b-30" class="section level3">
+<h3>Part B (30%)</h3>
 <p>Feature engineering. You have now created two base models and evaluation metrics from last week. Investigate creating at least two new predictors and analyze if they improve your model. Some possibilities:</p>
 <ul>
 <li>Neighborhood foreclosures/blight tickets</li>
@@ -39,15 +38,18 @@ height, (1 1 to 1.5, 2 1.5 to 2.5, 3 3+)</code></pre>
 <li>Sale price per square foot for neighborhood</li>
 </ul>
 </div>
-<div id="part-c-20" class="section level3">
-<h3>Part C (20%)</h3>
-<p>Prediction. Create out of sample predictions for both models. By this, predict overassessment and assessment/valuation for homes which did not sell for each model (2016 for B, 2019 for C). Note if you are having trouble with this step that you cannot use any information specific to the sale of a property for out-of-sample prediction.</p>
+<div id="part-c-30" class="section level3">
+<h3>Part C (30%)</h3>
+<p>Prediction. Create out of sample predictions for both models. By this, predict overassessment and assessment/valuation for homes which did not sell for each model (2016 for B, 2019 for C). Note if you are having trouble with this step that you cannot use any information specific to the sale of a property for out-of-sample prediction. In other words, we use information on sale prices to determine the true value of homes but we do not know this information for homes which did not sell and if we want to make a prediction for these homes we cannot use sale price information as a predictor.</p>
+<p>A helpful data framework for this section would be to create a dataset of all properties in 2016/2019. You would then label all the properties which sold (leaving un-sold properties unlabeled) and creating your testing and training data by filtering only to properties which were labeled. After training, you can then <code>augment</code> your full dataset of labeled/unlabeled data to get out of sample predictions.</p>
 </div>
-<div id="part-d-40" class="section level3">
-<h3>Part D (40%)</h3>
-<p>Model Explanation. Each model has different tools for explainability and we will discuss this more in class. Undertake this initial work knowing that we will gain more techniques for this later on.</p>
-<p>For Model B/overassessment, aggregate your predictions by census tract. Join in a census variable. Create a simple correlation plot and create a representation of the geographic variance in your predictions (this could be a leaflet map by census tract for example).</p>
-<p>For Model C/assessment, undertake an initial analysis of which factors your model identified as most important for valuation.</p>
+<div id="part-d-select-one-30" class="section level3">
+<h3>Part D (select one) (30%)</h3>
+<p>Model Explanation. Each model type has different tools for explainability and we will discuss this more in class. Undertake this initial work knowing that we will gain more techniques for this later on. Complete one of the following…</p>
+<p>Either (contextual explanation):</p>
+<p>For the classification overassessment model, aggregate your predictions by census tract. Join in a census variable. Create a simple correlation plot and create a representation of the geographic variance in your predictions (this could be a leaflet map by census tract for example).</p>
+<p>Or (machine learning explanation):</p>
+<p>For the regression assessment/valuation model, undertake an initial analysis of which factors your model identified as most important for valuation.</p>
 </div>
 </div>
 <div id="grading-overview" class="section level2">
