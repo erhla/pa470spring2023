@@ -59,7 +59,7 @@ An initial thesis (2 sentences or so). Descriptively describe (2 sentences or so
 
 ## Presentation
 
-Everyone will give a brief presentation (~5 minutes) during class on 4/28. Present your work (either your model or your case study). Explain the problem, the ML application, and to what extent you think the application should be implemented if at all.
+Everyone will give a brief presentation (~5 minutes) during class on 4/27. Present your work (either your model or your case study). Explain the problem, the ML application, and to what extent you think the application should be implemented if at all.
 
 ## Rubric
 
