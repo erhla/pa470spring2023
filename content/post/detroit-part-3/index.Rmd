@@ -37,7 +37,7 @@ Begin to finalize your report by only including report/website quality output. B
 
 ### Part B (30%)
 
-Feature engineering. You have now created two base models and evaluation metrics from last week. Investigate creating at least two new predictors and analyze if they improve your model. Some possibilities:
+Feature engineering. You have now created two base models and evaluation metrics from last week. Investigate creating at least two new predictors and analyze if they improve your model(s). Some possibilities:
   
 - Neighborhood foreclosures/blight tickets
 - Previous rates of assessment (part B only)
@@ -45,9 +45,11 @@ Feature engineering. You have now created two base models and evaluation metrics
 - Neighborhood demolition of homes (look at how many class 401 properties w/ nonzero assessment by year) 
 - Sale price per square foot for neighborhood
 
+You may either add one metric to each model or two metrics to one of the two models.
+
 ### Part C (30%)
 
-Prediction. Create out of sample predictions for both models. By this, predict overassessment and assessment/valuation for homes which did not sell for each model (2016 for B, 2019 for C). Note if you are having trouble with this step that you cannot use any information specific to the sale of a property for out-of-sample prediction. In other words, we use information on sale prices to determine the true value of homes but we do not know this information for homes which did not sell and if we want to make a prediction for these homes we cannot use sale price information as a predictor.
+Prediction. Create "out of sample" predictions for both models. By this, predict overassessment and assessment/valuation for homes which did not sell for each model (2016 for B, 2019 for C). Note if you are having trouble with this step that you cannot use any information specific to the sale of a property for out-of-sample prediction. In other words, we use information on sale prices to determine the true value of homes but we do not know this information for homes which did not sell and if we want to make a prediction for these homes we cannot use sale price information as a predictor.
 
 A helpful data framework for this section would be to create a dataset of all properties in 2016/2019. You would then label all the properties which sold (leaving un-sold properties unlabeled) and creating your testing and training data by filtering only to properties which were labeled. After training, you can then `augment` your full dataset of labeled/unlabeled data to get out of sample predictions. 
 
