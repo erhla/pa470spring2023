@@ -1,11 +1,13 @@
 ---
-title: "Week 10"
+title: "Week 10 Part 2"
 output:
   html_document:
     toc: true
     toc_float: true
     df_print: paged
     theme: sandstone
+    number_sections: true
+    code_folding: hide
 ---
 
 ```{r initial_setup, include=FALSE}
@@ -18,8 +20,6 @@ knitr::opts_chunk$set(warning = FALSE)
 
 theme_set(theme_bw())
 ```
-
-**NOTE currently there's an issue with the package version on CRAN. run `devtools::install_github("tidymodels/tune")`**
 
 # Chapter 15, Screening Many Models
 

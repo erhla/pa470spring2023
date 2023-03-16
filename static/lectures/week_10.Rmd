@@ -6,6 +6,8 @@ output:
     toc_float: true
     df_print: paged
     theme: sandstone
+    number_sections: true
+    code_folding: hide
 ---
 
 ```{r initial_setup, include=FALSE}
@@ -14,12 +16,11 @@ library(tidymodels)
 library(lubridate)
 library(kableExtra)
 library(scales)
-knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 
 theme_set(theme_bw())
 ```
 
-**NOTE currently there's an issue with the package version on CRAN. run `devtools::install_github("tidymodels/tune")`**
 
 # Introduction
 
@@ -325,7 +326,6 @@ The penalty parameter appears to result in better performance with smaller amoun
 ```{r}
 select_best(mlp_reg_tune, metric = "roc_auc")
 
-
 final_mlp_wflow <- 
   mlp_wflow %>% 
   finalize_workflow(select_best(mlp_reg_tune, metric = "roc_auc"))
@@ -480,7 +480,4 @@ The main important detail is to define how to perturb the tuning parameters from
 <video width="720" height="720" controls>
   <source src="https://www.tmwr.org/sa_search.mp4" type="video/mp4">
 </video>
-
-
-
 

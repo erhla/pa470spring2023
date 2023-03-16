@@ -3,7 +3,7 @@ title: "Detroit Part 4"
 date: 2023-03-30
 categories: ["R"]
 tags: ["detroit"]
-publishdate: 2023-03-23
+publishdate: 2023-03-15
 ---
 
 ```{r setup, include=FALSE}
@@ -21,7 +21,7 @@ Each week you will submit two files on blackboard, your code/Rmd file and the kn
 
 ## Final Submission (Due 3/31)
 
-Create `final_report.Rmd` in the reports folder, copying the yaml/framework from `part_1.Rmd`.
+Create `final_report.Rmd` in the reports folder, copying the yaml/framework from `part_3.Rmd`.
 
 Bring together your previous submissions into one cohesive report. This report should offer a brief overview of the problem (assessment), general trends on properties, your model, why your model is better than other models, and any technical or ethical critiques. 
 
@@ -29,7 +29,7 @@ Your final submission will build upon your part 3 submission by 'switching out' 
 
 ### Part A, New Assessment Models
 
-Mirror Section 15.3 from the textbook for your assessment model only!
+Mirror Section 15.3 from the textbook for your **assessment model** only!
   
   - Create a `workflow_set()` of three different model types. You may choose any which are comparable with `tidymodels`. Suggested models and tuning parameters below. I **encourage** you to consider using one model not from this list, but that is optional.
 
@@ -50,7 +50,7 @@ xgb_spec <-
   set_mode("regression")
 
 my_set <- workflow_set(
-  preproc = list(name_for_your_recipie = your_recipie),
+  preproc = list(name_for_your_recipe = your_recipe), # REPLACE WITH YOUR RECIPE
   models = list(linear_reg = linear_reg_spec, random_forest = rf_spec, boosted = xgb_spec)
 )
 ```
@@ -70,7 +70,7 @@ grid_results <-
    my_set %>%
    workflow_map(
       seed = 1503,
-      resamples = your_resamples,
+      resamples = your_resamples,  # REPLACE WITH YOUR RESAMPLES
       grid = 5,
       control = grid_ctrl,
       verbose = TRUE
@@ -83,13 +83,13 @@ grid_results <-
 ```
 best_results <- 
    grid_results %>% 
-   extract_workflow_set_result("best model type name") %>% 
-   select_best(metric = "your metric")
+   extract_workflow_set_result("best model type name") %>% # REPLACE
+   select_best(metric = "your metric") # REPLACE
 best_results
 
 best_results_fit <- 
    grid_results %>% 
-   extract_workflow("best model type name") %>% 
+   extract_workflow("best model type name") %>% # REPLACE
    finalize_workflow(best_results) %>% 
    last_fit(split = your_rsample_data) #this is the output of rsample::initial_time_split() or rsample::initial_split()
 ```
@@ -130,8 +130,8 @@ ctrl <- control_bayes(verbose = TRUE)
 your_search <- 
   your_workflow %>%
   tune_bayes(
-    resamples = ...,
-    metrics = ...,
+    resamples = ..., # REPLACE
+    metrics = ..., # REPLACE
     initial = initial_vals, #note you may simply pass a number here e.g. 6 for a random search
     iter = 25,
     control = ctrl
@@ -143,7 +143,7 @@ your_search <-
 
 Write a four paragraph conclusion to your file. Include information on your model type, its performance on your chosen objective function, any ethical or implementation issues (e.g. should Detroit use your model?).
 
-In class on the 31st, everyone will give a brief presentation on their work. You may present your knitted Rmd file or pull some of your graphs into a slide deck. Your presentation should be at most five minutes. Broadly look to answer if your model should be implemented by discussing the information in your conclusion and assignment.
+In class on the 30th, everyone will give a brief presentation on their work. You may present your knitted Rmd file or pull some of your graphs into a slide deck. Your presentation should be at most five minutes. Broadly look to answer if your model should be implemented by discussing the information in your conclusion and assignment.
 
 ## Grading Overview
 

@@ -3,7 +3,7 @@ title: "Detroit Part 4"
 date: 2023-03-30
 categories: ["R"]
 tags: ["detroit"]
-publishdate: 2023-03-23
+publishdate: 2023-03-15
 ---
 
 
@@ -18,12 +18,12 @@ publishdate: 2023-03-23
 </div>
 <div id="final-submission-due-331" class="section level2">
 <h2>Final Submission (Due 3/31)</h2>
-<p>Create <code>final_report.Rmd</code> in the reports folder, copying the yaml/framework from <code>part_1.Rmd</code>.</p>
+<p>Create <code>final_report.Rmd</code> in the reports folder, copying the yaml/framework from <code>part_3.Rmd</code>.</p>
 <p>Bring together your previous submissions into one cohesive report. This report should offer a brief overview of the problem (assessment), general trends on properties, your model, why your model is better than other models, and any technical or ethical critiques.</p>
 <p>Your final submission will build upon your part 3 submission by ‘switching out’ the model you use and adding a conclusion.</p>
 <div id="part-a-new-assessment-models" class="section level3">
 <h3>Part A, New Assessment Models</h3>
-<p>Mirror Section 15.3 from the textbook for your assessment model only!</p>
+<p>Mirror Section 15.3 from the textbook for your <strong>assessment model</strong> only!</p>
 <ul>
 <li>Create a <code>workflow_set()</code> of three different model types. You may choose any which are comparable with <code>tidymodels</code>. Suggested models and tuning parameters below. I <strong>encourage</strong> you to consider using one model not from this list, but that is optional.</li>
 </ul>
@@ -43,7 +43,7 @@ xgb_spec &lt;-
   set_mode(&quot;regression&quot;)
 
 my_set &lt;- workflow_set(
-  preproc = list(name_for_your_recipie = your_recipie),
+  preproc = list(name_for_your_recipe = your_recipe), # REPLACE WITH YOUR RECIPE
   models = list(linear_reg = linear_reg_spec, random_forest = rf_spec, boosted = xgb_spec)
 )</code></pre>
 <p>The textbook applies slightly different preprocessing steps to these models, but they should work reasonably well with your current recipe. If you have any compatability issues, I recommend starting with a simple recipe and adding things back one at a time.</p>
@@ -60,7 +60,7 @@ grid_results &lt;-
    my_set %&gt;%
    workflow_map(
       seed = 1503,
-      resamples = your_resamples,
+      resamples = your_resamples,  # REPLACE WITH YOUR RESAMPLES
       grid = 5,
       control = grid_ctrl,
       verbose = TRUE
@@ -71,13 +71,13 @@ grid_results &lt;-
 </ul>
 <pre><code>best_results &lt;- 
    grid_results %&gt;% 
-   extract_workflow_set_result(&quot;best model type name&quot;) %&gt;% 
-   select_best(metric = &quot;your metric&quot;)
+   extract_workflow_set_result(&quot;best model type name&quot;) %&gt;% # REPLACE
+   select_best(metric = &quot;your metric&quot;) # REPLACE
 best_results
 
 best_results_fit &lt;- 
    grid_results %&gt;% 
-   extract_workflow(&quot;best model type name&quot;) %&gt;% 
+   extract_workflow(&quot;best model type name&quot;) %&gt;% # REPLACE
    finalize_workflow(best_results) %&gt;% 
    last_fit(split = your_rsample_data) #this is the output of rsample::initial_time_split() or rsample::initial_split()</code></pre>
 <ul>
@@ -112,8 +112,8 @@ best_results_fit &lt;-
 your_search &lt;- 
   your_workflow %&gt;%
   tune_bayes(
-    resamples = ...,
-    metrics = ...,
+    resamples = ..., # REPLACE
+    metrics = ..., # REPLACE
     initial = initial_vals, #note you may simply pass a number here e.g. 6 for a random search
     iter = 25,
     control = ctrl
@@ -125,7 +125,7 @@ your_search &lt;-
 <div id="part-c-conclusion-presentation" class="section level3">
 <h3>Part C, Conclusion &amp; Presentation</h3>
 <p>Write a four paragraph conclusion to your file. Include information on your model type, its performance on your chosen objective function, any ethical or implementation issues (e.g. should Detroit use your model?).</p>
-<p>In class on the 31st, everyone will give a brief presentation on their work. You may present your knitted Rmd file or pull some of your graphs into a slide deck. Your presentation should be at most five minutes. Broadly look to answer if your model should be implemented by discussing the information in your conclusion and assignment.</p>
+<p>In class on the 30th, everyone will give a brief presentation on their work. You may present your knitted Rmd file or pull some of your graphs into a slide deck. Your presentation should be at most five minutes. Broadly look to answer if your model should be implemented by discussing the information in your conclusion and assignment.</p>
 </div>
 </div>
 <div id="grading-overview" class="section level2">
