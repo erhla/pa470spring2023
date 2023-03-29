@@ -279,7 +279,7 @@ mlp_reg_tune <-
     grid = mlp_param %>% grid_regular(levels = 2),
     metrics = roc_res
   )
-mlp_reg_tune
+
 ```
 
 ```{r}
@@ -455,6 +455,9 @@ svm_bo <-
 show_best(svm_bo)
 
 autoplot(svm_bo, type = "performance")
+
+svm_wflow %>%
+  finalize_workflow(select_best(svm_bo, 'roc_auc'))
 ```
 
 

@@ -165,21 +165,19 @@ Spring Vacation No Class
 
 Guest Speaker, public sector careers
 
-*Detroit Presentations*
-
+- [In the Age of AI, Frontline](https://www.youtube.com/watch?v=5dZ_lvDgevk)
 - [tidymodels, Chapter 18 Understanding Models](https://www.tmwr.org/index.html)
-
-**Assignment: [Detroit Final Submission & Presentation](/detroit-part-4)**
 
 ## Week 13, 4/6
 
-*Coding 5*
+*Detroit Presentations*
 
 - Chapter 11, DSPP
-- [In the Age of AI, Frontline](https://www.youtube.com/watch?v=5dZ_lvDgevk)
 - [Street–Level Algorithms: A Theory at the Gaps Between Policy and Decisions](https://dl.acm.org/doi/pdf/10.1145/3290605.3300760)
 
 **Assignment: [Final Project Proposal](/final-project), Due 4/4**
+**Assignment: [Detroit Final Submission & Presentation](/detroit-part-4)**
+
 
 ## Week 14, 4/13
 

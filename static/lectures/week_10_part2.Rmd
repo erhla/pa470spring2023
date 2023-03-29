@@ -242,7 +242,6 @@ library(finetune)
 concrete_folds <- 
    vfold_cv(concrete_train, strata = compressive_strength, repeats=1, v=5)
 
-
 race_ctrl <-
    control_race(
       save_pred = TRUE,
