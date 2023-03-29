@@ -176,6 +176,7 @@ Guest Speaker, public sector careers
 - [Street–Level Algorithms: A Theory at the Gaps Between Policy and Decisions](https://dl.acm.org/doi/pdf/10.1145/3290605.3300760)
 
 **Assignment: [Final Project Proposal](/final-project), Due 4/4**
+
 **Assignment: [Detroit Final Submission & Presentation](/detroit-part-4)**
 
 

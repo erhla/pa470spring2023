@@ -19,7 +19,7 @@ Instead of traditional problem sets, this course has a single four part assignme
 
 Each week you will submit two files on blackboard, your code/Rmd file and the knitted output of your code. Blackboard will not accept html files so you must zip the files together.
 
-## Final Submission (Due 3/31)
+## Final Submission
 
 Create `final_report.Rmd` in the reports folder, copying the yaml/framework from `part_3.Rmd`.
 
