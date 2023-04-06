@@ -95,7 +95,7 @@ best_results_fit &lt;-
 <h3>Part B, Hyperparameter Exploration for Classification</h3>
 <p>Mirroring Section 14.2.3, take your current workflow and use <code>tune_bayes()</code> to create a small tuning grid for your classification model. You will need to:</p>
 <ul>
-<li>Identify appropriate hyperparameters to be tuned for your chosen model type and set them equal to <code>tune()</code> in your workflow (note: do not include <code>mtry</code> in your tuning grid)</li>
+<li>Identify appropriate hyperparameters to be tuned for your chosen model type and set them equal to <code>tune()</code> in your workflow (note: do not include <code>mtry</code> in your tuning grid. note: if you use <code>logistic_reg()</code> you must use engine <code>glmnet</code> to have tuning parameters.)</li>
 <li>Manually create a start_grid and evaluate your workflow to create initial values for <code>tune_bayes()</code></li>
 </ul>
 <pre><code>initial_vals &lt;- your_workflow %&gt;%

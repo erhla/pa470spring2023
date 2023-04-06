@@ -110,7 +110,7 @@ best_results_fit %>%
 
 Mirroring Section 14.2.3, take your current workflow and use `tune_bayes()` to create a small tuning grid for your classification model. You will need to:
 
-- Identify appropriate hyperparameters to be tuned for your chosen model type and set them equal to `tune()` in your workflow (note: do not include `mtry` in your tuning grid)
+- Identify appropriate hyperparameters to be tuned for your chosen model type and set them equal to `tune()` in your workflow (note: do not include `mtry` in your tuning grid. note: if you use `logistic_reg()` you must use engine `glmnet` to have tuning parameters.)
 - Manually create a start_grid and evaluate your workflow to create initial values for `tune_bayes()`
 
 ```
