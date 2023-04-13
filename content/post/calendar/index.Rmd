@@ -69,7 +69,7 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 *Public Sector Case Studies*
 
-- [A Catalog of Civic Data Use Cases](https://datasmart.ash.harvard.edu/news/article/how-can-data-and-analytics-be-used-to-enhance-city-operations-723)
+- [A Catalog of Civic Data Use Cases](https://datasmart.hks.harvard.edu/news/article/how-can-data-and-analytics-be-used-to-enhance-city-operations-723)
 - [New York City Artifical Intelligence Strategy](https://www1.nyc.gov/assets/cto/downloads/ai-strategy/nyc_ai_strategy.pdf)
 - [Secretary Antony J. Blinken at the National Security Commission on Artificial Intelligence’s (NSCAI) Global Emerging Technology Summit](https://www.state.gov/secretary-antony-j-blinken-at-the-national-security-commission-on-artificial-intelligences-nscai-global-emerging-technology-summit/)
 - [Cook County Assessor Residential Valuation Model](https://gitlab.com/ccao-data-science---modeling/models/ccao_res_avm/-/tree/2021-assessment-year)
@@ -159,8 +159,6 @@ In this course, we will explore critical issues with AI/ML in the public sector 
 
 Spring Vacation No Class
 
-**Note: recording of solutions to Detroit Part 3 will be posted this week**
-
 ## Week 12, 3/30
 
 Guest Speaker, public sector careers
@@ -200,11 +198,11 @@ Guest Speaker
 - Ch 5 Weapons of Math Destruction, on Blackboard
 - Chapter 15, DSPP
 
-## Week 16, 4/27
+## Week 16, 4/27 (Online)
 
 *Final Presentations*
 
-**Assignment: [Final Project](/final-project), Due 4/28**
+**Assignment: [Final Project](/final-project), Due 5/2**
 
 # Course Inspired by...
 

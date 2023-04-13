@@ -6,6 +6,8 @@ output:
     toc_float: true
     df_print: paged
     theme: sandstone
+    number_sections: true
+    code_folding: hide
 ---
 
 ```{r initial_setup, include=FALSE}
@@ -214,5 +216,5 @@ grid_pred %>%
   labs(x = "Predictor x", y = "Predictor y", shape = NULL)
 ```
 
-Using the standard error as a measure to preclude samples from being predicted can also be applied to models with numeric outcomes. However, as shown in the next section, this may not always work.  
+Using the standard error as a measure to preclude samples from being predicted can also be applied to models with numeric outcomes.  
 

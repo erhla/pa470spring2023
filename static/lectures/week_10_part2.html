@@ -3082,29 +3082,29 @@ grid_results &lt;-
 <pre><code>## i  1 of 12 tuning:     MARS</code></pre>
 <pre><code>## ✔  1 of 12 tuning:     MARS (1.1s)</code></pre>
 <pre><code>## i  2 of 12 tuning:     CART</code></pre>
-<pre><code>## ✔  2 of 12 tuning:     CART (2.4s)</code></pre>
+<pre><code>## ✔  2 of 12 tuning:     CART (2.5s)</code></pre>
 <pre><code>## i    No tuning parameters. `fit_resamples()` will be attempted</code></pre>
 <pre><code>## i  3 of 12 resampling: CART_bagged</code></pre>
-<pre><code>## ✔  3 of 12 resampling: CART_bagged (7.9s)</code></pre>
+<pre><code>## ✔  3 of 12 resampling: CART_bagged (8.5s)</code></pre>
 <pre><code>## i  4 of 12 tuning:     RF</code></pre>
 <pre><code>## i Creating pre-processing data to finalize unknown parameter: mtry</code></pre>
-<pre><code>## ✔  4 of 12 tuning:     RF (4.5s)</code></pre>
+<pre><code>## ✔  4 of 12 tuning:     RF (4.7s)</code></pre>
 <pre><code>## i  5 of 12 tuning:     boosting</code></pre>
-<pre><code>## ✔  5 of 12 tuning:     boosting (7.9s)</code></pre>
+<pre><code>## ✔  5 of 12 tuning:     boosting (8.4s)</code></pre>
 <pre><code>## i  6 of 12 tuning:     Cubist</code></pre>
-<pre><code>## ✔  6 of 12 tuning:     Cubist (6.1s)</code></pre>
+<pre><code>## ✔  6 of 12 tuning:     Cubist (6.3s)</code></pre>
 <pre><code>## i  7 of 12 tuning:     SVM_radial</code></pre>
 <pre><code>## ✔  7 of 12 tuning:     SVM_radial (4.1s)</code></pre>
 <pre><code>## i  8 of 12 tuning:     SVM_poly</code></pre>
 <pre><code>## ✔  8 of 12 tuning:     SVM_poly (6.5s)</code></pre>
 <pre><code>## i  9 of 12 tuning:     KNN</code></pre>
-<pre><code>## ✔  9 of 12 tuning:     KNN (4.9s)</code></pre>
+<pre><code>## ✔  9 of 12 tuning:     KNN (5.1s)</code></pre>
 <pre><code>## i 10 of 12 tuning:     neural_network</code></pre>
-<pre><code>## ✔ 10 of 12 tuning:     neural_network (7.1s)</code></pre>
+<pre><code>## ✔ 10 of 12 tuning:     neural_network (7.4s)</code></pre>
 <pre><code>## i 11 of 12 tuning:     full_quad_linear_reg</code></pre>
-<pre><code>## ✔ 11 of 12 tuning:     full_quad_linear_reg (5.7s)</code></pre>
+<pre><code>## ✔ 11 of 12 tuning:     full_quad_linear_reg (6.1s)</code></pre>
 <pre><code>## i 12 of 12 tuning:     full_quad_KNN</code></pre>
-<pre><code>## ✔ 12 of 12 tuning:     full_quad_KNN (34.6s)</code></pre>
+<pre><code>## ✔ 12 of 12 tuning:     full_quad_KNN (36.5s)</code></pre>
 <pre class="r"><code>num_grid_models &lt;- nrow(collect_metrics(grid_results, summarize = FALSE))</code></pre>
 <pre class="r"><code>grid_results %&gt;% 
    rank_results() %&gt;% 
@@ -3134,7 +3134,6 @@ Models</h2>
 concrete_folds &lt;- 
    vfold_cv(concrete_train, strata = compressive_strength, repeats=1, v=5)
 
-
 race_ctrl &lt;-
    control_race(
       save_pred = TRUE,
@@ -3153,31 +3152,31 @@ race_results &lt;-
       verbose = TRUE
    )</code></pre>
 <pre><code>## i  1 of 12 tuning:     MARS</code></pre>
-<pre><code>## ✔  1 of 12 tuning:     MARS (2.3s)</code></pre>
+<pre><code>## ✔  1 of 12 tuning:     MARS (2.7s)</code></pre>
 <pre><code>## i  2 of 12 tuning:     CART</code></pre>
-<pre><code>## ✔  2 of 12 tuning:     CART (2.9s)</code></pre>
+<pre><code>## ✔  2 of 12 tuning:     CART (3.2s)</code></pre>
 <pre><code>## i    No tuning parameters. `fit_resamples()` will be attempted</code></pre>
 <pre><code>## i  3 of 12 resampling: CART_bagged</code></pre>
-<pre><code>## ✔  3 of 12 resampling: CART_bagged (13s)</code></pre>
+<pre><code>## ✔  3 of 12 resampling: CART_bagged (13.9s)</code></pre>
 <pre><code>## i  4 of 12 tuning:     RF</code></pre>
 <pre><code>## i Creating pre-processing data to finalize unknown parameter: mtry</code></pre>
-<pre><code>## ✔  4 of 12 tuning:     RF (7.1s)</code></pre>
+<pre><code>## ✔  4 of 12 tuning:     RF (7.4s)</code></pre>
 <pre><code>## i  5 of 12 tuning:     boosting</code></pre>
-<pre><code>## ✔  5 of 12 tuning:     boosting (17.2s)</code></pre>
+<pre><code>## ✔  5 of 12 tuning:     boosting (16.7s)</code></pre>
 <pre><code>## i  6 of 12 tuning:     Cubist</code></pre>
-<pre><code>## ✔  6 of 12 tuning:     Cubist (8.8s)</code></pre>
+<pre><code>## ✔  6 of 12 tuning:     Cubist (9s)</code></pre>
 <pre><code>## i  7 of 12 tuning:     SVM_radial</code></pre>
 <pre><code>## ✔  7 of 12 tuning:     SVM_radial (4.7s)</code></pre>
 <pre><code>## i  8 of 12 tuning:     SVM_poly</code></pre>
-<pre><code>## ✔  8 of 12 tuning:     SVM_poly (10.2s)</code></pre>
+<pre><code>## ✔  8 of 12 tuning:     SVM_poly (10.6s)</code></pre>
 <pre><code>## i  9 of 12 tuning:     KNN</code></pre>
-<pre><code>## ✔  9 of 12 tuning:     KNN (8.4s)</code></pre>
+<pre><code>## ✔  9 of 12 tuning:     KNN (8.1s)</code></pre>
 <pre><code>## i 10 of 12 tuning:     neural_network</code></pre>
-<pre><code>## ✔ 10 of 12 tuning:     neural_network (13.6s)</code></pre>
+<pre><code>## ✔ 10 of 12 tuning:     neural_network (13.5s)</code></pre>
 <pre><code>## i 11 of 12 tuning:     full_quad_linear_reg</code></pre>
-<pre><code>## ✔ 11 of 12 tuning:     full_quad_linear_reg (7.1s)</code></pre>
+<pre><code>## ✔ 11 of 12 tuning:     full_quad_linear_reg (6.9s)</code></pre>
 <pre><code>## i 12 of 12 tuning:     full_quad_KNN</code></pre>
-<pre><code>## ✔ 12 of 12 tuning:     full_quad_KNN (46.7s)</code></pre>
+<pre><code>## ✔ 12 of 12 tuning:     full_quad_KNN (47.7s)</code></pre>
 <pre class="r"><code>autoplot(
    race_results,
    rank_metric = &quot;rmse&quot;,  

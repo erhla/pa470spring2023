@@ -6,6 +6,8 @@ output:
     toc_float: true
     df_print: paged
     theme: sandstone
+    number_sections: true
+    code_folding: hide
 ---
 
 ```{r initial_setup, include=FALSE}
@@ -186,7 +188,7 @@ complaints %>%
 
 Creating these matrices is very memory intensive!
 
-While you can create your own embeddings, pre-trained word embeddings suhc as GloVe which is training on Wikipedia and news sources are readily available.
+While you can create your own embeddings, pre-trained word embeddings such as GloVe which is training on Wikipedia and news sources are readily available.
 
 ```{r}
 library(textdata)

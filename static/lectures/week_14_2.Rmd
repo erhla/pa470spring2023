@@ -6,6 +6,8 @@ output:
     toc_float: true
     df_print: paged
     theme: sandstone
+    number_sections: true
+    code_folding: hide
 ---
 
 ```{r initial_setup, include=FALSE}
@@ -152,6 +154,7 @@ grid.arrange(plot1, plot2, ncol = 2)
 # Regression Example
 
 ```{r}
+#devtools::install_github("EmilHvitfeldt/scotus")
 library(scotus)
 
 scotus_filtered %>%
