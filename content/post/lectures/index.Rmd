@@ -79,10 +79,6 @@ None
 
 - [Code](/lectures/week_14.Rmd)
 - [Code Output](/lectures/week_14.html)
-- [Code 2](/lectures/week_14_2.Rmd)
-- [Code Output 2](/lectures/week_14_2.html)
-- [Code 3](/lectures/week_14_3.Rmd)
-- [Code Output 3](/lectures/week_14_3.html)
 - [Part 4 Code](/solutions/part_4.Rmd)
 - [Part 4 Solutions](/solutions/part_4.html)
 

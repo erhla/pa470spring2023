@@ -24,11 +24,13 @@ library(stopwords)
 library(SnowballC)
 library(widyr)
 library(quanteda)
+library(LiblineaR)
+library(applicable)
+library(patchwork)
+library(probably)
 #devtools::install_github("EmilHvitfeldt/scotus")
 
 ```
-
-
 
 
 # Natural Language Processing (NLP) / Supervised Modeling for Text
@@ -262,4 +264,455 @@ Do word embeddings create systemic unfairness or bias? Yes! Here's some examples
 
 - Terms associated with women are more associated with the arts and terms associated with men are more associated with science.
 
+
+# Sentiment
+
+Sentiment analysis attempts to assign scores or moods to text. Recall Figure 13.3 from the textbook.
+
+
+## 13.2.3 DIY
+
+*From Chapter 13*
+ 
+
+In this DIY, we turn to a Wikipedia entry about the 1979 Oil Crisis that had a substantial effect on the Western World's economy. The article on the Oil Crisis presents both positive and negative effects -- a perfect example of how sentiment analysis can summarize a body of text. The first paragraph describes the magnitude of the crisis: 
+
+> The 1970s energy crisis occurred when the Western world, particularly the United States, Canada, Western Europe, Australia, and New Zealand, faced substantial petroleum shortages, real and perceived, as well as elevated prices. The two worst crises of this period were the 1973 oil crisis and the 1979 energy crisis, when the Yom Kippur War and the Iranian Revolution triggered interruptions in Middle Eastern oil exports.
+
+Whereas the sixth paragraph softens the implications, turning to instances where the crisis had a far less adverse impact:
+
+>The period was not uniformly negative for all economies. Petroleum-rich countries in the Middle East benefited from increased prices and the slowing production in other areas of the world. Some other countries, such as Norway, Mexico, and Venezuela, benefited as well. In the United States, Texas and Alaska, as well as some other oil-producing areas, experienced major economic booms due to soaring oil prices even as most of the rest of the nation struggled with the stagnant economy. Many of these economic gains, however, came to a halt as prices stabilized and dropped in the 1980s.
+
+Our objective with this DIY is to show how sentiment evolves over the first six paragraphs as scored by the Bing Lexicon implemented in the `tidytext` package. To start, we read the raw text from the `wiki-article.txt` file. 
+
+```{r, warning=FALSE, message = FALSE, error=FALSE}
+
+#Read text article
+  wiki_article <- readLines("https://raw.githubusercontent.com/DataScienceForPublicPolicy/diys/main/data/wiki-article.txt")
+```
+
+To make use of the text, we tokenize the six paragraphs of text, remove stop words, then apply a left join with the Bing lexicon. The resulting table contains both matching and non-matching terms and aggregates term frequencies by paragraph `para`, `word`, and `sentiment`. In total, $n = 18$ words are labeled negative and $n=11$ words are positive.
+
+```{r, warning=FALSE, message = FALSE, error=FALSE}
+#Set up in data frame
+  wiki_df <- data.frame(para = 1:length(wiki_article),
+                        text = wiki_article, 
+                        stringsAsFactors = FALSE)
+
+#Join tokens to lexicon
+  sent_df <- wiki_df %>%
+    unnest_tokens(word, text) %>% 
+    anti_join(get_stopwords(language = "en")) %>%
+    left_join(get_sentiments("bing")) %>%
+    count(para, word, sentiment, sort = TRUE)
+  
+#Label terms without sentiment
+  sent_df$sentiment[is.na(sent_df$sentiment)] <- "none"
+```
+
+Next, we write a basic function to calculate various sentiment metrics such as polarity and expressiveness. Packages such as `sentimentr` implement scoring, but as rules-based sentiment analysis is fairly simple, we directly implement metrics in the formula to illustrate their accessibility. 
+
+```{r}
+  sentMetrics <- function(n, s){
+
+    #Set input metrics
+      N <- sum(n, na.rm = T)
+      x_p <- sum(n[s =="positive"], na.rm = T)
+      x_n <- sum(n[s =="negative"], na.rm = T)
+      
+    #Calculate scores
+      return(data.frame(count.positive = x_p,
+                        count.negative = x_n,
+                        net.sentiment = (x_p - x_n) / N,
+                        expressiveness = (x_p + x_n) / N,
+                        positivity = x_p / N,
+                        negativity = x_n / N,
+                        polarity = (x_p - x_n) / (x_p + x_n))
+      )
+  
+  }
+```
+
+The function is designed to work on one document at a time, requiring a loop to score each paragraph in the article. We iterate over each paragraph using `lapply`, returning the results in a data frame `rated`.
+
+```{r, warning=FALSE, message = FALSE, error=FALSE}
+#Apply sentiment scores to each paragraph
+  rated <- lapply(sort(unique(sent_df$para)), function(p){
+                    para_df <- sent_df %>% filter(para == p)
+                    output <- sentMetrics(n = para_df$n, 
+                                          s = para_df$sentiment)
+                    return(data.frame(para = p, 
+                                      output))
+                  })
+
+#Bind into a data frame
+  rated <- do.call(rbind, rated)
+  
+```
+
+Let's examine the results by plotting sentiment by paragraph in Figure \@ref(fig:sentoil). In the first line graph (plot (A)), we see that the first four paragraphs are net negative, then turn net positive in the last two paragraphs. Notice that both polarity and net sentiment tell the same story, but the magnitudes of their values are quite different. In fact, the Pearson's correlation is $\rho = 0.964$. When we dive deeper into the positivity and negativity, we see that the switch in tone is widespread -- earlier paragraphs have mostly negative terms while the tone softens in later paragraphs that describe less dire conditions in the world economy. 
+
+
+```{r, sentoil, echo = FALSE, message = FALSE, warning = FALSE, error = FALSE, fig.cap = "Sentiment scores for the first six paragraphs of the Wikipedia article on 1979 Oil Crisis. Graph (A) illustrates net sentiment and polarity. Graph (B) plots positivity and negativity.", fig.height = 3 }
+pacman::p_load(ggplot2, gridExtra)
+
+plot1 <- ggplot(rated, aes(x = para, y = polarity)) +
+          geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey") + 
+          geom_line(colour = "blue", width = 2)  + 
+          geom_point(colour = "blue", width = 2)  + 
+          geom_line(aes(x = para, y = net.sentiment), colour = "orange", width = 2) + 
+          geom_point(aes(x = para, y = net.sentiment), colour = "orange", width = 2) + 
+          ylab("Polarity (blue), Net Sentiment (orange)") + 
+          xlab("Paragraph Number") + 
+          ggtitle("(A) Polarity and Net Sentiment by Paragraph") + 
+          theme_bw() + 
+          theme(plot.title = element_text(size = 10),
+                axis.title.x = element_text(size = 10),
+                axis.title.y = element_text(size = 10)) 
+          
+plot2 <- ggplot(rated, aes(x = para, y = positivity)) +
+          geom_hline(aes(yintercept = 0), linetype = "dashed", colour = "grey") + 
+          geom_point(colour = "green") + 
+          geom_line(colour = "green", width = 2)  + 
+          geom_point(aes(y = negativity), colour = "red") + 
+          geom_line(aes(y = negativity), colour = "red", width = 2)  + 
+          ylab("Negativity (red), Positivity (blue)") + 
+          xlab("Paragraph Number") + 
+          ggtitle("(B) Negativity and Positivity by Paragraph") + 
+          theme_bw() + 
+          theme(plot.title = element_text(size = 10),
+                axis.title.x = element_text(size = 10),
+                axis.title.y = element_text(size = 10)) 
+
+grid.arrange(plot1, plot2, ncol = 2)
+``` 
+
+
+# Regression Example
+
+```{r}
+#devtools::install_github("EmilHvitfeldt/scotus")
+library(scotus)
+
+scotus_filtered %>%
+  slice_sample(n=5) %>%
+  as_tibble()
+
+scotus_filtered %>%
+  mutate(year = as.numeric(year),
+         year = 10 * (year %/% 10)) %>%
+  count(year) %>%
+  ggplot(aes(year, n)) +
+  geom_col() +
+  labs(x = "Year", y = "Number of opinions per decade")
+```
+
+
+```{r}
+scotus_split <- scotus_filtered %>%
+  mutate(year = as.numeric(year),
+         text = str_remove_all(text, "'")) %>%
+  slice_sample(n=100) %>%
+  initial_split()
+
+scotus_train <- training(scotus_split)
+scotus_test <- testing(scotus_split)
+```
+
+
+- First, we must specify in our initial `recipe()` statement the form of our model (with the formula `year ~ text`, meaning we will predict the year of each opinion from the text of that opinion) and what our training data is.
+
+- Then, we tokenize the text of the court opinions. 
+
+- Next, we filter to only keep the top 1000 tokens by term frequency. We filter out those less frequent words because we expect them to be too rare to be reliable, at least for our first attempt. (We are _not_ removing stop words yet; we'll explore removing them in Section.)
+
+- The recipe step `step_tfidf()`, used with defaults here, weights each token frequency by the inverse document frequency.\index{tf-idf}
+
+- As a last step, we normalize (center and scale) these tf-idf values. This centering and scaling is needed because we're going to use a support vector machine model.
+
+
+```{r}
+final_rec <- recipe(year ~ text, data = scotus_train) %>%
+  step_tokenize(text) %>%
+  step_tokenfilter(text, max_tokens = 1e3) %>%
+  step_tfidf(text) %>%
+  step_normalize(all_predictors())
+```
+
+
+
+
+```{r}
+svm_spec <- svm_linear() %>%
+  set_mode("regression") %>%
+  set_engine("LiblineaR")
+
+final_workflow <- workflow() %>%
+  add_recipe(final_rec) %>%
+  add_model(svm_spec)
+
+scotus_folds <- vfold_cv(scotus_train, v = 5)
+
+final_rs <- fit_resamples(
+  final_workflow,
+  scotus_folds,
+  metrics = metric_set(rmse, mae, mape),
+  control = control_resamples(save_pred = TRUE, verbose=TRUE)
+)
+```
+
+
+```{r}
+final_rs %>%
+  collect_metrics() %>%
+  ggplot(aes( x=.metric, y=mean)) +
+  geom_bar(stat='identity') 
+
+
+final_fitted <- last_fit(final_workflow, scotus_split)
+
+collect_metrics(final_fitted)
+
+scotus_fit <- extract_fit_parsnip(final_fitted$.workflow[[1]])
+
+scotus_fit %>%
+  tidy() %>%
+  filter(term != "Bias") %>%
+  mutate(
+    sign = case_when(estimate > 0 ~ "Later (after mean year)",
+                     TRUE ~ "Earlier (before mean year)"),
+    estimate = abs(estimate),
+    term = str_remove_all(term, "tfidf_text_")
+  ) %>%
+  group_by(sign) %>%
+  top_n(20, estimate) %>%
+  ungroup() %>%
+  ggplot(aes(x = estimate,
+             y = fct_reorder(term, estimate),
+             fill = sign)) +
+  geom_col(show.legend = FALSE) +
+  scale_x_continuous(expand = c(0, 0)) +
+  facet_wrap(~sign, scales = "free") +
+  labs(
+    y = NULL,
+    title = paste("Variable importance for predicting year of",
+                  "Supreme Court opinions"),
+    subtitle = paste("These features are the most importance",
+                     "in predicting the year of an opinion")
+  )
+
+final_fitted %>%
+  collect_predictions() %>%
+  ggplot(aes(year, .pred)) +
+  geom_abline(lty = 2, color = "gray80", size = 1.5) +
+  geom_point(alpha = 0.3) +
+  labs(
+    x = "Truth",
+    y = "Predicted year",
+    title = paste("Predicted and true years for the testing set of",
+                  "Supreme Court opinions"),
+    subtitle = "For the testing set, predictions are more reliable after 1850"
+  )
+
+```
+
+# Ch 16 Dimensionality Reduction
+
+Dimensionality reduction transforms a data set from a high-dimensional space into a low-dimensional space, and can be a good choice when you suspect there are “too many” variables. An excess of variables, usually predictors, can be a problem because it is difficult to understand or visualize data in higher dimensions.
+
+- Principal component analysis (PCA) unsupervised and uncorrelated
+
+![](https://www.tmwr.org/16-dimensionality-reduction_files/figure-html/bean-pca-1.png)
+
+![](https://www.tmwr.org/16-dimensionality-reduction_files/figure-html/pca-loadings-1.png)
+
+- Partial least squares (PCA) supervised
+
+"It tries to find components that simultaneously maximize the variation in the predictors while also maximizing the relationship between those components and the outcome."
+
+- Independent Component Analysis (ICA) statistically independent
+
+# Ch 19 Trusting Predictions
+
+How do we avoid inappropriate predictions?
+
+
+- Equivocal zones use the predicted values to alert the user that the results may be suspect.
+
+- Applicability uses the predictors to measure the amount of extrapolation (if any) for new samples.
+
+
+```{r trust-simulation}
+library(tidymodels)
+tidymodels_prefer()
+simulate_two_classes <- 
+  function (n, error = 0.1, eqn = quote(-1 - 2 * x - 0.2 * x^2 + 2 * y^2))  {
+    # Slightly correlated predictors
+    sigma <- matrix(c(1, 0.7, 0.7, 1), nrow = 2, ncol = 2)
+    dat <- MASS::mvrnorm(n = n, mu = c(0, 0), Sigma = sigma)
+    colnames(dat) <- c("x", "y")
+    cls <- paste0("class_", 1:2)
+    dat <- 
+      as_tibble(dat) %>% 
+      mutate(
+        linear_pred = !!eqn,
+        # Add some misclassification noise
+        linear_pred = linear_pred + rnorm(n, sd = error),
+        prob = binomial()$linkinv(linear_pred),
+        class = ifelse(prob > runif(n), cls[1], cls[2]),
+        class = factor(class, levels = cls)
+      )
+    dplyr::select(dat, x, y, class)
+  }
+set.seed(1901)
+training_set <- simulate_two_classes(200)
+testing_set  <- simulate_two_classes(50)
+```
+
+We estimate a logistic regression model using Bayesian methods (using the default Gaussian prior distributions for the parameters): 
+
+```{r trust-bayes-glm}
+two_class_mod <- 
+  logistic_reg() %>% 
+  set_engine("stan", seed = 1902) %>% 
+  fit(class ~ . + I(x^2)+ I(y^2), data = training_set)
+print(two_class_mod, digits = 3)
+```
+
+The fitted class boundary is overlaid onto the test set. The data points closest to the class boundary are the most uncertain. If their values changed slightly, their predicted class might change. One simple method for disqualifying some results is to call them "equivocal" if the values are within some range around 50% (or whatever the appropriate probability cutoff might be for a certain situation). Depending on the problem that the model is being applied to, this might indicate that another measurement should be collected or that we require more information before a trustworthy prediction is possible.
+
+```{r glm-boundaries}
+#| echo = FALSE, 
+#| fig.width=6, 
+#| fig.height=6, 
+#| out.width="70%", 
+#| fig.align="center",
+#| fig.cap = "Simulated two class data set with a logistic regression fit and decision boundary.",
+#| fig.alt = "Simulated two class data set with a logistic regression fit and decision boundary. The scatter plot of the two classes shows fairly correlated data. The decision boundary is a parabola in the x axis that does a good job of separating the classes."
+data_grid <-
+  crossing(
+    x = seq(-4.5, 4.5, length = 100),
+    y = seq(-4.5, 4.5, length = 100)
+  )
+grid_pred <- 
+  predict(two_class_mod, data_grid, type = "prob") %>% 
+  bind_cols(
+    predict(two_class_mod, data_grid, type = "pred_int", std_error = TRUE),
+    data_grid
+  )
+grid_pred %>% 
+  mutate(`Probability of Class 1` = .pred_class_1) %>% 
+  ggplot(aes(x = x, y = y)) + 
+  geom_raster(aes(fill = `Probability of Class 1`)) +
+  geom_point(data = testing_set, aes(shape = class, color = class), alpha = .75, size = 2.5) + 
+  geom_contour(aes(z = .pred_class_1), breaks = .5, color = "black", lty = 2) + 
+  coord_equal() + 
+  labs(x = "Predictor x", y = "Predictor y", color = NULL, shape = NULL) + 
+  scale_fill_gradient2(low = "#FDB863", mid = "white", high = "#B2ABD2", midpoint = .5) + 
+  scale_color_manual(values = c("#2D004B", "darkorange"))
+```
+
+We could base the width of the band around the cutoff on how performance improves when the uncertain results are removed. However, we should also estimate the reportable rate (the expected proportion of usable results). For example, it would not be useful in real-world situations to have perfect performance but only release predictions on 2% of the samples passed to the model. 
+
+Let's use the test set to determine the balance between improving performance and having enough reportable results. The predictions are created using:  
+
+```{r trust-bayes-glm-pred}
+test_pred <- augment(two_class_mod, testing_set)
+test_pred %>% head()
+```
+
+With tidymodels, the `probably` package contains functions for equivocal zones. For cases with two classes, the `make_two_class_pred()` function creates a factor-like column that has the predicted classes with an equivocal zone: 
+
+```{r trust-make-eq}
+library(probably)
+lvls <- levels(training_set$class)
+test_pred <- 
+  test_pred %>% 
+  mutate(.pred_with_eqz = make_two_class_pred(.pred_class_1, lvls, buffer = 0.15))
+test_pred %>% count(.pred_with_eqz)
+```
+
+Rows that are within $0.50\pm0.15$ are given a value of `[EQ]`. 
+
+:::rmdnote
+It is important to realize that `[EQ]` in this example is not a factor level, but an attribute of that column. 
+:::
+
+Since the factor levels are the same as the original data, confusion matrices and other statistics can be computed without error. When using standard functions from the `yardstick` package, the equivocal results are converted to `NA` and are not used in the calculations that use the hard class predictions. Notice the differences in these confusion matrices:
+
+```{r trust-conf-mat}
+# All data
+test_pred %>% conf_mat(class, .pred_class)
+# Reportable results only: 
+test_pred %>% conf_mat(class, .pred_with_eqz)
+```
+
+There is also an `is_equivocal()` function available for filtering these rows from the data. 
+
+Does the equivocal zone help improve accuracy? Let's look over different buffer sizes:
+
+```{r trust-eq-calcs, eval = FALSE}
+# A function to change the buffer then compute performance.
+eq_zone_results <- function(buffer) {
+  test_pred <- 
+    test_pred %>% 
+    mutate(.pred_with_eqz = make_two_class_pred(.pred_class_1, lvls, buffer = buffer))
+  acc <- test_pred %>% accuracy(class, .pred_with_eqz)
+  rep_rate <- reportable_rate(test_pred$.pred_with_eqz)
+  tibble(accuracy = acc$.estimate, reportable = rep_rate, buffer = buffer)
+}
+# Evaluate a sequence of buffers and plot the results. 
+map_dfr(seq(0, .1, length.out = 40), eq_zone_results) %>% 
+  pivot_longer(c(-buffer), names_to = "statistic", values_to = "value") %>% 
+  ggplot(aes(x = buffer, y = value, lty = statistic)) + 
+  geom_step(size = 1.2, alpha = 0.8) + 
+  labs(y = NULL, lty = NULL)
+```
+
+```{r equivocal-zone-results, ref.label = "trust-eq-calcs"}
+#| echo = FALSE,
+#| out.width="80%",
+#| fig.cap = "The effect of equivocal zones on model performance.",
+#| fig.alt = "The effect of equivocal zones on model performance. There is a slight increase in accuracy at the expense of a falling reportable rate."
+```
+
+The figure shows us that accuracy improves by a few percentage points but at the cost of nearly 10% of predictions being unusable! The value of such a compromise depends on how the model predictions will be used. 
+
+This analysis focused on using the predicted class probability to disqualify points, since this is a fundamental measure of uncertainty in classification models. A slightly better approach would be to use the standard error of the class probability. Since we used a Bayesian model, the probability estimates we found are actually the mean of the posterior predictive distribution. In other words, the Bayesian model gives us a distribution for the class probability.  Measuring the standard deviation of this distribution gives us a _standard error of prediction_ of the probability. In most cases, this value is directly related to the mean class probability. You might recall that, for a Bernoulli random variable with probability $p$, the variance is $p(1-p)$. Because of this relationship, the standard error is largest when the probability is 50%. Instead of assigning an equivocal result using the class probability, we could instead use a cutoff on the standard error of prediction. 
+
+One important aspect of the standard error of prediction is that it takes into account more than just the class probability. In cases where there is significant extrapolation or aberrant predictor values, the standard error might increase. The benefit of using the standard error of prediction is that it might also flag predictions that are problematic (as opposed to simply uncertain). One reason that we used the Bayesian model is that it naturally estimates the standard error of prediction; not many models can calculate this. For our test set, using `type = "pred_int"` will produce upper and lower limits and the `std_error` adds a column for that quantity. For 80% intervals: 
+
+```{r trust-pred-int}
+test_pred <- 
+  test_pred %>% 
+  bind_cols(
+    predict(two_class_mod, testing_set, type = "pred_int", std_error = TRUE)
+  )
+```
+
+For our example where the model and data are well-behaved, Figure \@ref(fig:std-errors) shows the standard error of prediction across the space: 
+
+```{r std-errors}
+#| echo = FALSE, 
+#| fig.width=5, 
+#| fig.height=5, 
+#| out.width="70%", 
+#| fig.align="center",
+#| fig.cap = "The effect of the standard error of prediction overlaid with the test set data.",
+#| fig.alt = "The effect of the standard error of prediction overlaid with the test set data. The region of large variation is very similar to the class boundary space. Additionally, there is a large amount of variation to the west of the inflection point of the boundary curve."
+grid_pred %>% 
+  mutate(`Std Error` = .std_error) %>% 
+  ggplot(aes(x = x, y = y)) + 
+  geom_raster(aes(fill = `Std Error`)) + 
+  scale_fill_gradientn(colours = c("#F7FBFF", "#DEEBF7", "#C6DBEF", "#9ECAE1", "#6BAED6")) + 
+  geom_point(data = testing_set, aes(shape = class), alpha = .5, size = 2) + 
+  coord_equal() + 
+  labs(x = "Predictor x", y = "Predictor y", shape = NULL)
+```
+
+Using the standard error as a measure to preclude samples from being predicted can also be applied to models with numeric outcomes.  
+
+# Ch 20 Ensembles of Models
+
+[Here](https://www.tmwr.org/ensembles.html)
 
