@@ -35,11 +35,20 @@ library(probably)
 
 # Natural Language Processing (NLP) / Supervised Modeling for Text
 
-This lecture is based on [Supervised Machine Learning for Text Analysis in R](https://smltar.com/preface.html).
+This lecture is heavily based on [Supervised Machine Learning for Text Analysis in R](https://smltar.com/preface.html).
 
 Similar to our previous work we can have both regression and classification text based problems. A regression model would predict a numeric/continuous output 'such as predicting the year of a United States Supreme Court opinion from the text of that opinion.' A classification model would predict a discrete class 'such as predicting whether a GitHub issue is about documentation or not from the text of the issue.'
 
 Natural language needs to be standardized and transformed to numeric representations for modeling. We will use the `textrecipes` package to do this. 
+
+These are different types of prediction problems, but in both, we can use the tools of supervised machine learning to connect our input, which may exist entirely or partly as text data, with our outcome of interest. Most supervised models for text data are built with one of three purposes in mind:
+
+- The main goal of a predictive model is to generate the most accurate predictions possible.
+
+- An inferential model is created to test a hypothesis or draw conclusions about a population.
+
+- The main purpose of a descriptive model is to describe the properties of the observed data.
+
 
 # Preprocessing
 
